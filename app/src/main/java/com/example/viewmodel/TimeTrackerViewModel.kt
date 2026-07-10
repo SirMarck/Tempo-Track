@@ -117,6 +117,28 @@ class TimeTrackerViewModel(private val repository: TimeTrackerRepository) : View
             repository.deleteSessionById(id)
         }
     }
+
+    fun addManualSession(
+        clientId: Long,
+        startTime: Long,
+        endTime: Long,
+        description: String,
+        discountValue: Double = 0.0,
+        discountPercentage: Double = 0.0
+    ) {
+        viewModelScope.launch {
+            repository.insertSession(
+                Session(
+                    clientId = clientId,
+                    startTime = startTime,
+                    endTime = endTime,
+                    description = description,
+                    discountValue = discountValue,
+                    discountPercentage = discountPercentage
+                )
+            )
+        }
+    }
 }
 
 class TimeTrackerViewModelFactory(private val repository: TimeTrackerRepository) : ViewModelProvider.Factory {
