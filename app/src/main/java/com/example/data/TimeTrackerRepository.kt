@@ -7,6 +7,9 @@ class TimeTrackerRepository(private val dao: TimeTrackerDao) {
     val allSessions: Flow<List<Session>> = dao.getAllSessions()
     val activeSession: Flow<Session?> = dao.getActiveSession()
 
+    suspend fun getAllClientsSync(): List<Client> = dao.getAllClientsSync()
+    suspend fun getAllSessionsSync(): List<Session> = dao.getAllSessionsSync()
+
     fun getSessionsForClient(clientId: Long): Flow<List<Session>> = dao.getSessionsForClient(clientId)
 
     suspend fun getClientById(id: Long): Client? = dao.getClientById(id)

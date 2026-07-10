@@ -12,6 +12,9 @@ interface TimeTrackerDao {
     @Query("SELECT * FROM clients ORDER BY name ASC")
     fun getAllClients(): Flow<List<Client>>
 
+    @Query("SELECT * FROM clients ORDER BY name ASC")
+    suspend fun getAllClientsSync(): List<Client>
+
     @Query("SELECT * FROM clients WHERE id = :id")
     suspend fun getClientById(id: Long): Client?
 
@@ -26,6 +29,9 @@ interface TimeTrackerDao {
 
     @Query("SELECT * FROM sessions ORDER BY startTime DESC")
     fun getAllSessions(): Flow<List<Session>>
+
+    @Query("SELECT * FROM sessions ORDER BY startTime DESC")
+    suspend fun getAllSessionsSync(): List<Session>
 
     @Query("SELECT * FROM sessions WHERE clientId = :clientId ORDER BY startTime DESC")
     fun getSessionsForClient(clientId: Long): Flow<List<Session>>

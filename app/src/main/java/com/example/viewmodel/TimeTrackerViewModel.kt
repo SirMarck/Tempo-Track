@@ -62,10 +62,13 @@ class TimeTrackerViewModel(private val repository: TimeTrackerRepository) : View
         viewModelScope.launch {
             val session = activeSession.value
             if (session != null && !session.isPaused) {
+                val now = System.currentTimeMillis()
+                val newEvents = if (session.pauseEvents.isEmpty()) "P:$now" else "${session.pauseEvents},P:$now"
                 repository.updateSession(
                     session.copy(
                         isPaused = true,
-                        lastPausedTime = System.currentTimeMillis()
+                        lastPausedTime = now,
+                        pauseEvents = newEvents
                     )
                 )
             }
@@ -78,11 +81,13 @@ class TimeTrackerViewModel(private val repository: TimeTrackerRepository) : View
             if (session != null && session.isPaused) {
                 val now = System.currentTimeMillis()
                 val addedPause = now - (session.lastPausedTime ?: now)
+                val newEvents = if (session.pauseEvents.isEmpty()) "R:$now" else "${session.pauseEvents},R:$now"
                 repository.updateSession(
                     session.copy(
                         isPaused = false,
                         lastPausedTime = null,
-                        pausedDuration = session.pausedDuration + addedPause
+                        pausedDuration = session.pausedDuration + addedPause,
+                        pauseEvents = newEvents
                     )
                 )
             }

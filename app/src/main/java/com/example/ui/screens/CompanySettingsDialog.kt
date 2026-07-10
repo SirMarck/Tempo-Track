@@ -16,6 +16,8 @@ fun CompanySettingsDialog(
     
     var companyName by remember { mutableStateOf(sharedPrefs.getString("company_name", "") ?: "") }
     var companyCnpj by remember { mutableStateOf(sharedPrefs.getString("company_cnpj", "") ?: "") }
+    var closingDay by remember { mutableStateOf(sharedPrefs.getInt("closing_day", 1)) }
+    var closingDayStr by remember { mutableStateOf(closingDay.toString()) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -39,6 +41,23 @@ fun CompanySettingsDialog(
                     label = { Text("CNPJ") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = closingDayStr,
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                            closingDayStr = newValue
+                            val parsed = newValue.toIntOrNull()
+                            if (parsed != null && parsed in 1..31) {
+                                closingDay = parsed
+                            }
+                        }
+                    },
+                    label = { Text("Dia de Fechamento do Mês (1-31)") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
@@ -47,6 +66,7 @@ fun CompanySettingsDialog(
                     sharedPrefs.edit()
                         .putString("company_name", companyName)
                         .putString("company_cnpj", companyCnpj)
+                        .putInt("closing_day", closingDay)
                         .apply()
                     onDismiss()
                 }

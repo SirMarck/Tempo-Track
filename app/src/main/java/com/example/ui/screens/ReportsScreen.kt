@@ -146,10 +146,20 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 fun ClientReportCard(client: Client, sessions: List<Session>, monthName: String) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var totalDuration = 0L
-    sessions.forEach { totalDuration += maxOf(0L, (it.endTime!! - it.startTime) - it.pausedDuration) }
+    var totalGrossValue = 0.0
+    var totalDiscountValue = 0.0
     
-    val totalHours = totalDuration.toDouble() / (1000 * 60 * 60)
-    val totalValue = totalHours * client.hourlyRate
+    sessions.forEach { session ->
+        val duration = maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
+        val originalValue = (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
+        val discountPctVal = originalValue * (session.discountPercentage / 100.0)
+        val totalDiscount = discountPctVal + session.discountValue
+        
+        totalDuration += duration
+        totalGrossValue += originalValue
+        totalDiscountValue += totalDiscount
+    }
+    val totalNetValue = maxOf(0.0, totalGrossValue - totalDiscountValue)
 
     ElevatedCard(
         modifier = Modifier
@@ -162,28 +172,66 @@ fun ClientReportCard(client: Client, sessions: List<Session>, monthName: String)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(client.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(8.dp))
+            Text("Valor da Hora: ${FormatUtils.formatCurrency(client.hourlyRate)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Total Horas:", style = MaterialTheme.typography.bodyMedium)
                 Text(FormatUtils.formatDuration(totalDuration), fontWeight = FontWeight.Bold)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Valor Total a Cobrar:", style = MaterialTheme.typography.bodyLarge)
-                Text(FormatUtils.formatCurrency(totalValue), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text("Valor Bruto:", style = MaterialTheme.typography.bodyMedium)
+                Text(FormatUtils.formatCurrency(totalGrossValue), fontWeight = FontWeight.Bold)
+            }
+            if (totalDiscountValue > 0.0) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Total Descontos:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    Text("- ${FormatUtils.formatCurrency(totalDiscountValue)}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Líquido a Cobrar:", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(FormatUtils.formatCurrency(totalNetValue), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
             Text("Detalhes de Serviço:", style = MaterialTheme.typography.labelMedium)
-            sessions.forEach { session ->
+            sessions.sortedBy { it.startTime }.forEach { session ->
                 val duration = maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
-                val valItem = (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(FormatUtils.formatDate(session.startTime), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        Text(session.description, style = MaterialTheme.typography.bodySmall)
+                val originalValue = (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
+                val discountPctVal = originalValue * (session.discountPercentage / 100.0)
+                val totalDiscount = discountPctVal + session.discountValue
+                val finalValue = maxOf(0.0, originalValue - totalDiscount)
+                val startTimeStr = FormatUtils.formatTime(session.startTime)
+                val endTimeStr = FormatUtils.formatTime(session.endTime)
+                val pausesList = com.example.utils.ExportUtils.parsePauseEvents(session.pauseEvents)
+                
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(FormatUtils.formatDate(session.startTime), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                            Text(session.description, style = MaterialTheme.typography.bodySmall)
+                            Text("Início: $startTimeStr | Encerramento: $endTimeStr", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            
+                            if (pausesList.isNotEmpty()) {
+                                pausesList.forEach { pausePair ->
+                                    val pTime = FormatUtils.formatTime(pausePair.first)
+                                    val rTime = pausePair.second?.let { FormatUtils.formatTime(it) } ?: "Sem retomada"
+                                    Text(" ↳ Pausa: $pTime | Retomada: $rTime", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                        Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
+                            if (totalDiscount > 0.0) {
+                                Text(
+                                    text = FormatUtils.formatCurrency(originalValue),
+                                    style = MaterialTheme.typography.bodySmall.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(FormatUtils.formatCurrency(finalValue), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                    Text(FormatUtils.formatCurrency(valItem), style = MaterialTheme.typography.bodySmall)
                 }
             }
             

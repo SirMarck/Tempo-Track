@@ -18,6 +18,7 @@ class ReminderWorker(
 ) : Worker(context, workerParams) {
 
     override fun doWork(): Result {
+        com.example.utils.MonthlyReportManager.checkAndGenerateMonthlyReports(applicationContext)
         showNotification()
         return Result.success()
     }

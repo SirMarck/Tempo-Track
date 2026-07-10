@@ -45,6 +45,7 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
     var selectedSessionForOptions by remember { mutableStateOf<Session?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showDiscountDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -64,7 +65,10 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
                 if (client != null) {
                     val durationMillis = maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
                     val durationHours = durationMillis.toDouble() / (1000 * 60 * 60)
-                    total += durationHours * client.hourlyRate
+                    val originalValue = durationHours * client.hourlyRate
+                    val discountPctVal = originalValue * (session.discountPercentage / 100.0)
+                    val finalValue = maxOf(0.0, originalValue - discountPctVal - session.discountValue)
+                    total += finalValue
                 }
             }
         }
@@ -232,6 +236,13 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
                         ) {
                             Text("Renomear")
                         }
+                        TextButton(
+                            onClick = {
+                                showDiscountDialog = true
+                            }
+                        ) {
+                            Text("Desconto")
+                        }
                         Button(
                             onClick = {
                                 showDeleteConfirmDialog = true
@@ -247,6 +258,59 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
                 },
                 dismissButton = {
                     TextButton(onClick = { selectedSessionForOptions = null }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+
+        if (showDiscountDialog && selectedSessionForOptions != null) {
+            var valInput by remember(selectedSessionForOptions) { mutableStateOf(selectedSessionForOptions!!.discountValue.toString()) }
+            var pctInput by remember(selectedSessionForOptions) { mutableStateOf(selectedSessionForOptions!!.discountPercentage.toString()) }
+            
+            AlertDialog(
+                onDismissRequest = { 
+                    showDiscountDialog = false 
+                    selectedSessionForOptions = null
+                },
+                title = { Text("Aplicar Desconto") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Defina os descontos a serem aplicados a este trabalho:")
+                        OutlinedTextField(
+                            value = valInput,
+                            onValueChange = { valInput = it },
+                            label = { Text("Desconto em Valor (R$)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = pctInput,
+                            onValueChange = { pctInput = it },
+                            label = { Text("Desconto em Percentual (%)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val v = valInput.toDoubleOrNull() ?: 0.0
+                            val p = pctInput.toDoubleOrNull() ?: 0.0
+                            viewModel.updateSession(selectedSessionForOptions!!.copy(discountValue = v, discountPercentage = p))
+                            showDiscountDialog = false
+                            selectedSessionForOptions = null
+                        }
+                    ) {
+                        Text("Salvar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { 
+                            showDiscountDialog = false 
+                            selectedSessionForOptions = null
+                        }
+                    ) {
                         Text("Cancelar")
                     }
                 }
@@ -508,13 +572,38 @@ fun SessionItem(session: Session, client: Client?, onLongClick: () -> Unit) {
             Text(session.description, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
             val duration = if (session.endTime != null) maxOf(0L, (session.endTime - session.startTime) - session.pausedDuration) else 0L
-            val value = if (client != null) {
+            val originalValue = if (client != null) {
                 (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
             } else 0.0
+            val discountPctVal = originalValue * (session.discountPercentage / 100.0)
+            val totalDiscount = discountPctVal + session.discountValue
+            val finalValue = maxOf(0.0, originalValue - totalDiscount)
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Duração: ${FormatUtils.formatDuration(duration)}", style = MaterialTheme.typography.bodySmall)
-                Text(FormatUtils.formatCurrency(value), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Column {
+                    Text("Duração: ${FormatUtils.formatDuration(duration)}", style = MaterialTheme.typography.bodySmall)
+                    if (totalDiscount > 0.0) {
+                        val descLabel = StringBuilder()
+                        if (session.discountPercentage > 0.0) {
+                            descLabel.append("${session.discountPercentage}%")
+                        }
+                        if (session.discountValue > 0.0) {
+                            if (descLabel.isNotEmpty()) descLabel.append(" + ")
+                            descLabel.append(FormatUtils.formatCurrency(session.discountValue))
+                        }
+                        Text("Desconto: $descLabel", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    if (totalDiscount > 0.0) {
+                        Text(
+                            text = FormatUtils.formatCurrency(originalValue),
+                            style = MaterialTheme.typography.bodySmall.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Text(FormatUtils.formatCurrency(finalValue), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
     }

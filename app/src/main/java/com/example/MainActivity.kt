@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
         askNotificationPermission()
         setupWorker()
+        com.example.utils.MonthlyReportManager.checkAndGenerateMonthlyReports(this)
 
         setContent {
             MyApplicationTheme {
