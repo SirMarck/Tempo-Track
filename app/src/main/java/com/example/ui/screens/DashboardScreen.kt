@@ -40,9 +40,23 @@ import com.example.ui.theme.luxBorder
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(viewModel: TimeTrackerViewModel) {
+    val context = LocalContext.current
     val clients by viewModel.clients.collectAsState()
     val sessions by viewModel.sessions.collectAsState()
     val activeSession by viewModel.activeSession.collectAsState()
+
+    // Automatically manage Foreground Service based on activeSession status
+    LaunchedEffect(activeSession) {
+        if (activeSession != null) {
+            val intent = android.content.Intent(context, com.example.services.TimerService::class.java).apply {
+                action = com.example.services.TimerService.ACTION_START
+            }
+            androidx.core.content.ContextCompat.startForegroundService(context, intent)
+        } else {
+            val intent = android.content.Intent(context, com.example.services.TimerService::class.java)
+            context.stopService(intent)
+        }
+    }
 
     var showStartDialog by remember { mutableStateOf(false) }
     var showManualDialog by remember { mutableStateOf(false) }
@@ -55,7 +69,6 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
     var showDiscountDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     // Calculate estimating earnings this month
     var estimatedEarnings by remember { mutableStateOf(0.0) }
