@@ -67,6 +67,7 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
+    var sessionToEdit by remember { mutableStateOf<Session?>(null) }
 
     val scope = rememberCoroutineScope()
 
@@ -265,27 +266,45 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
         if (selectedSessionForOptions != null) {
             AlertDialog(
                 onDismissRequest = { selectedSessionForOptions = null },
-                title = { Text("Opções do Trabalho") },
-                text = { Text("Escolha uma ação para o trabalho selecionado:") },
-                confirmButton = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                title = { Text("Opções do Trabalho", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        TextButton(
+                        Text("Escolha uma ação para o trabalho selecionado:")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        FilledTonalButton(
+                            onClick = {
+                                sessionToEdit = selectedSessionForOptions
+                                selectedSessionForOptions = null
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Editar Detalhes")
+                        }
+                        
+                        OutlinedButton(
                             onClick = {
                                 showRenameDialog = true
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Renomear")
+                            Text("Apenas Renomear")
                         }
-                        TextButton(
+                        
+                        OutlinedButton(
                             onClick = {
                                 showDiscountDialog = true
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Desconto")
+                            Text("Apenas Desconto")
                         }
+                        
                         Button(
                             onClick = {
                                 showDeleteConfirmDialog = true
@@ -293,15 +312,20 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error,
                                 contentColor = MaterialTheme.colorScheme.onError
-                            )
+                            ),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Deletar")
+                            Text("Deletar Trabalho")
                         }
                     }
                 },
+                confirmButton = {},
                 dismissButton = {
-                    TextButton(onClick = { selectedSessionForOptions = null }) {
-                        Text("Cancelar")
+                    TextButton(
+                        onClick = { selectedSessionForOptions = null },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cancelar", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                 }
             )
@@ -435,6 +459,18 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
                     ) {
                         Text("Cancelar")
                     }
+                }
+            )
+        }
+
+        if (sessionToEdit != null) {
+            EditSessionDialog(
+                session = sessionToEdit!!,
+                clients = clients,
+                onDismiss = { sessionToEdit = null },
+                onSave = { updatedSession ->
+                    viewModel.updateSession(updatedSession)
+                    sessionToEdit = null
                 }
             )
         }
@@ -950,6 +986,270 @@ fun ManualSessionDialog(
                         description,
                         discountVal,
                         discountPct
+                    )
+                }
+            ) {
+                Text("Salvar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditSessionDialog(
+    session: Session,
+    clients: List<Client>,
+    onDismiss: () -> Unit,
+    onSave: (Session) -> Unit
+) {
+    if (clients.isEmpty()) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Nenhum cliente") },
+            text = { Text("Adicione um cliente primeiro na aba Clientes.") },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
+        )
+        return
+    }
+
+    val context = LocalContext.current
+    var selectedClientId by remember { mutableStateOf(session.clientId) }
+    var description by remember { mutableStateOf(session.description) }
+    var discountValInput by remember { mutableStateOf(if (session.discountValue > 0.0) session.discountValue.toString() else "") }
+    var discountPctInput by remember { mutableStateOf(if (session.discountPercentage > 0.0) session.discountPercentage.toString() else "") }
+
+    // Start/End date-time management
+    val startCalendar = remember { 
+        Calendar.getInstance().apply { 
+            timeInMillis = session.startTime
+        } 
+    }
+    val endCalendar = remember { 
+        Calendar.getInstance().apply {
+            timeInMillis = session.endTime ?: session.startTime
+        }
+    }
+
+    var startTimeMillis by remember { mutableLongStateOf(session.startTime) }
+    var endTimeMillis by remember { mutableLongStateOf(session.endTime ?: session.startTime) }
+
+    val startDateText = remember(startTimeMillis) {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(java.util.Date(startTimeMillis))
+    }
+    val startTimeText = remember(startTimeMillis) {
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(startTimeMillis))
+    }
+    val endTimeText = remember(endTimeMillis) {
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(endTimeMillis))
+    }
+
+    val durationMillis = maxOf(0L, endTimeMillis - startTimeMillis)
+    val hours = durationMillis / (1000 * 60 * 60)
+    val minutes = (durationMillis / (1000 * 60)) % 60
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Trabalho Terminado", fontWeight = FontWeight.Bold) },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                item {
+                    Text("Selecione o Cliente:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                    Column {
+                        clients.forEach { client ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedClientId = client.id }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                RadioButton(
+                                    selected = client.id == selectedClientId,
+                                    onClick = { selectedClientId = client.id }
+                                )
+                                Text(client.name, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Período do Trabalho:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                item {
+                    // Date picker button
+                    OutlinedButton(
+                        onClick = {
+                            startCalendar.timeInMillis = startTimeMillis
+                            val dpd = android.app.DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    startCalendar.timeInMillis = startTimeMillis
+                                    startCalendar.set(Calendar.YEAR, year)
+                                    startCalendar.set(Calendar.MONTH, month)
+                                    startCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                                    startTimeMillis = startCalendar.timeInMillis
+                                    
+                                    endCalendar.timeInMillis = endTimeMillis
+                                    endCalendar.set(Calendar.YEAR, year)
+                                    endCalendar.set(Calendar.MONTH, month)
+                                    endCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                                    endTimeMillis = endCalendar.timeInMillis
+                                },
+                                startCalendar.get(Calendar.YEAR),
+                                startCalendar.get(Calendar.MONTH),
+                                startCalendar.get(Calendar.DAY_OF_MONTH)
+                            )
+                            dpd.show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.Update, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Data: $startDateText")
+                    }
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                startCalendar.timeInMillis = startTimeMillis
+                                val tpd = android.app.TimePickerDialog(
+                                    context,
+                                    { _, hourOfDay, minute ->
+                                        startCalendar.timeInMillis = startTimeMillis
+                                        startCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                                        startCalendar.set(Calendar.MINUTE, minute)
+                                        startCalendar.set(Calendar.SECOND, 0)
+                                        startCalendar.set(Calendar.MILLISECOND, 0)
+                                        startTimeMillis = startCalendar.timeInMillis
+                                        
+                                        if (endTimeMillis < startCalendar.timeInMillis) {
+                                            endTimeMillis = startCalendar.timeInMillis + 3600000 // +1h
+                                        }
+                                    },
+                                    startCalendar.get(Calendar.HOUR_OF_DAY),
+                                    startCalendar.get(Calendar.MINUTE),
+                                    true
+                                )
+                                tpd.show()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Início: $startTimeText")
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                endCalendar.timeInMillis = endTimeMillis
+                                val tpd = android.app.TimePickerDialog(
+                                    context,
+                                    { _, hourOfDay, minute ->
+                                        endCalendar.timeInMillis = endTimeMillis
+                                        endCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                                        endCalendar.set(Calendar.MINUTE, minute)
+                                        endCalendar.set(Calendar.SECOND, 0)
+                                        endCalendar.set(Calendar.MILLISECOND, 0)
+                                        
+                                        if (endCalendar.timeInMillis < startTimeMillis) {
+                                            endCalendar.add(Calendar.DAY_OF_MONTH, 1)
+                                        }
+                                        endTimeMillis = endCalendar.timeInMillis
+                                    },
+                                    endCalendar.get(Calendar.HOUR_OF_DAY),
+                                    endCalendar.get(Calendar.MINUTE),
+                                    true
+                                )
+                                tpd.show()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Fim: $endTimeText")
+                        }
+                    }
+                }
+
+                item {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                        ) {
+                            Text(
+                                text = "Duração calculada: ${hours}h ${minutes}min",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Descrição do Serviço") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = discountValInput,
+                            onValueChange = { discountValInput = it },
+                            label = { Text("Desconto (R$)") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = discountPctInput,
+                            onValueChange = { discountPctInput = it },
+                            label = { Text("Desconto (%)") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val discountVal = discountValInput.toDoubleOrNull() ?: 0.0
+                    val discountPct = discountPctInput.toDoubleOrNull() ?: 0.0
+                    onSave(
+                        session.copy(
+                            clientId = selectedClientId,
+                            startTime = startTimeMillis,
+                            endTime = endTimeMillis,
+                            description = description,
+                            discountValue = discountVal,
+                            discountPercentage = discountPct
+                        )
                     )
                 }
             ) {

@@ -28,6 +28,7 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var clientToDelete by remember { mutableStateOf<Client?>(null) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -85,10 +86,37 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
                 items(clients) { client ->
-                    ClientItem(client, onDelete = { viewModel.deleteClient(client.id) })
+                    ClientItem(client, onDelete = { clientToDelete = client })
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
+        }
+
+        if (clientToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { clientToDelete = null },
+                title = { Text("Excluir Cliente", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                text = { Text("Tem certeza que deseja excluir o cliente \"${clientToDelete?.name}\"? Todos os registros de horas associados serão mantidos ou excluídos dependendo do banco de dados, mas não poderão ser associados novamente.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            clientToDelete?.let { viewModel.deleteClient(it.id) }
+                            clientToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    ) {
+                        Text("Excluir")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { clientToDelete = null }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
 
         if (showAddDialog) {
