@@ -34,6 +34,7 @@ import java.util.Locale
 import androidx.compose.material.icons.filled.Edit
 
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Info
 
 import com.example.ui.theme.luxBorder
 
@@ -62,6 +63,7 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
     var showManualDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     var selectedSessionForOptions by remember { mutableStateOf<Session?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -117,6 +119,16 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
                                 },
                                 leadingIcon = {
                                     Icon(Icons.Default.Settings, contentDescription = null)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sobre o Tempo Track") },
+                                onClick = {
+                                    showMenu = false
+                                    showAboutDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Info, contentDescription = null)
                                 }
                             )
                             DropdownMenuItem(
@@ -261,6 +273,10 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
 
         if (showSettingsDialog) {
             CompanySettingsDialog(onDismiss = { showSettingsDialog = false })
+        }
+
+        if (showAboutDialog) {
+            AboutDialog(onDismiss = { showAboutDialog = false })
         }
 
         if (selectedSessionForOptions != null) {

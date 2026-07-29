@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,6 +41,7 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 
     var showMenu by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -80,6 +82,16 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
                                 },
                                 leadingIcon = {
                                     Icon(Icons.Default.Settings, contentDescription = null)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sobre o Tempo Track") },
+                                onClick = {
+                                    showMenu = false
+                                    showAboutDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Info, contentDescription = null)
                                 }
                             )
                             DropdownMenuItem(
@@ -137,6 +149,10 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 
             if (showSettingsDialog) {
                 CompanySettingsDialog(onDismiss = { showSettingsDialog = false })
+            }
+
+            if (showAboutDialog) {
+                AboutDialog(onDismiss = { showAboutDialog = false })
             }
         }
     }
