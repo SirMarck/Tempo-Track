@@ -1,0 +1,6 @@
+{
+  "name": "TempoTrack",
+  "description": "App para rastrear o tempo de trabalho faturável por cliente, emitir relatórios mensais e fornecer atualizações de ganhos estimados.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

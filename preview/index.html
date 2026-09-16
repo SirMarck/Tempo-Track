@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TempoTrack - Preview & Simulador Interativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --lux-primary: #6BF5A5;
+      --lux-on-primary: #092918;
+      --lux-primary-container: #1C422A;
+      --lux-on-primary-container: #C4FFDC;
+      --lux-secondary: #3FEA88;
+      --lux-background: #111713;
+      --lux-on-background: #E8ECE9;
+      --lux-surface: #1A221C;
+      --lux-on-surface: #E8ECE9;
+      --lux-surface-variant: #223126;
+      --lux-on-surface-variant: #AAB8AF;
+      --lux-outline: #3A5244;
+      --lux-danger: #FF6B6B;
+      --lux-warning: #FFD166;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #0a0d0b;
+      color: var(--lux-on-background);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(107, 245, 165, 0.08) 0%, rgba(0,0,0,0) 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .top-header {
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .top-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #FFF 30%, var(--lux-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .top-header p {
+      color: var(--lux-on-surface-variant);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--lux-surface-variant);
+      border: 1px solid var(--lux-outline);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--lux-primary);
+      font-weight: 600;
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--lux-primary);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--lux-primary);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* Phone Mockup Frame */
+    .phone-container {
+      position: relative;
+      width: 390px;
+      height: 820px;
+      background: var(--lux-background);
+      border-radius: 46px;
+      border: 10px solid #28332a;
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 0 50px rgba(107, 245, 165, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    /* Camera Island */
+    .camera-notch {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90px;
+      height: 22px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+    }
+
+    .camera-lens {
+      width: 10px;
+      height: 10px;
+      background: #111e15;
+      border: 1px solid #203525;
+      border-radius: 50%;
+    }
+
+    /* Screen Top App Bar */
+    .app-bar {
+      padding: 42px 18px 12px;
+      background: rgba(26, 34, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--lux-outline);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-bar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--lux-on-surface-variant);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      color: var(--lux-primary);
+      background: var(--lux-surface-variant);
+    }
+
+    /* Main Scroll Content */
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .app-content::-webkit-scrollbar {
+      width: 4px;
+    }
+    .app-content::-webkit-scrollbar-thumb {
+      background: var(--lux-outline);
+      border-radius: 4px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--lux-surface);
+      border: 1px solid var(--lux-outline);
+      border-radius: 20px;
+      padding: 18px;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .card.lux-glow {
+      border: 1px solid rgba(107, 245, 165, 0.35);
+      box-shadow: 0 4px 24px rgba(107, 245, 165, 0.12);
+    }
+
+    .card-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--lux-on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+
+    .earnings-val {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--lux-primary);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -1px;
+    }
+
+    .earnings-sub {
+      font-size: 12px;
+      color: var(--lux-on-surface-variant);
+      margin-top: 4px;
+    }
+
+    /* Active Timer Box */
+    .timer-display {
+      text-align: center;
+      padding: 12px 0;
+    }
+
+    .timer-clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 44px;
+      font-weight: 800;
+      color: #FFF;
+      letter-spacing: -1.5px;
+      text-shadow: 0 0 20px rgba(107, 245, 165, 0.3);
+    }
+
+    .timer-client {
+      font-size: 14px;
+      color: var(--lux-primary);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .timer-desc {
+      font-size: 13px;
+      color: var(--lux-on-surface-variant);
+      margin-top: 2px;
+    }
+
+    .timer-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--lux-primary);
+      color: var(--lux-on-primary);
+      box-shadow: 0 4px 14px rgba(107, 245, 165, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(107, 245, 165, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--lux-surface-variant);
+      color: var(--lux-on-surface);
+      border: 1px solid var(--lux-outline);
+    }
+    .btn-secondary:hover {
+      background: rgba(107, 245, 165, 0.15);
+      border-color: var(--lux-primary);
+    }
+
+    .btn-danger {
+      background: rgba(255, 107, 107, 0.15);
+      color: var(--lux-danger);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+    .btn-danger:hover {
+      background: rgba(255, 107, 107, 0.25);
+    }
+
+    /* AI Card (New Gemini feature) */
+    .ai-banner {
+      background: linear-gradient(135deg, rgba(28, 66, 42, 0.7) 0%, rgba(26, 34, 28, 0.9) 100%);
+      border: 1px solid rgba(107, 245, 165, 0.4);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .ai-banner:hover {
+      transform: scale(1.02);
+      border-color: var(--lux-primary);
+    }
+
+    .ai-sparkle {
+      width: 36px;
+      height: 36px;
+      background: var(--lux-primary-container);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--lux-primary);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Session List */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFF;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .session-item {
+      background: var(--lux-surface);
+      border: 1px solid var(--lux-outline);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s;
+    }
+
+    .session-item:hover {
+      border-color: rgba(107, 245, 165, 0.3);
+      background: #1e2821;
+    }
+
+    .session-info h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFF;
+    }
+
+    .session-info p {
+      font-size: 12px;
+      color: var(--lux-on-surface-variant);
+      margin-top: 2px;
+    }
+
+    .session-meta {
+      text-align: right;
+    }
+
+    .session-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--lux-primary);
+    }
+
+    .session-duration {
+      font-size: 11px;
+      color: var(--lux-on-surface-variant);
+      margin-top: 2px;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      height: 68px;
+      background: var(--lux-surface);
+      border-top: 1px solid var(--lux-outline);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex-shrink: 0;
+      padding-bottom: 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--lux-on-surface-variant);
+      font-size: 11px;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 16px;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .nav-item.active {
+      color: var(--lux-primary);
+      background: var(--lux-primary-container);
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    /* Dialog Modal */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--lux-surface);
+      border: 1px solid var(--lux-outline);
+      border-radius: 24px;
+      padding: 22px;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #FFF;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--lux-background);
+      border: 1px solid var(--lux-outline);
+      border-radius: 12px;
+      color: #FFF;
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .input-field:focus {
+      border-color: var(--lux-primary);
+    }
+
+    /* Interactive controls outside phone */
+    .controls-panel {
+      margin-top: 24px;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .tool-chip {
+      background: #1a221c;
+      border: 1px solid var(--lux-outline);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--lux-on-background);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+
+    .tool-chip:hover {
+      background: var(--lux-primary-container);
+      border-color: var(--lux-primary);
+      color: var(--lux-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-header">
+    <h1>TempoTrack Live Simulator</h1>
+    <p>
+      <span class="status-badge">App Android Nativo (Jetpack Compose)</span>
+      <span>•</span>
+      <span>Package: <code>com.aistudio.tempotrack.kzmplo</code></span>
+    </p>
+  </div>
+
+  <!-- Phone Mockup Device -->
+  <div class="phone-container">
+    <div class="camera-notch">
+      <div class="camera-lens"></div>
+    </div>
+
+    <!-- Top App Bar -->
+    <div class="app-bar">
+      <div class="app-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lux-primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="screen-title">TempoTrack</span>
+      </div>
+      <div class="app-bar-actions">
+        <button class="icon-btn" title="Configurar Empresa" onclick="openModal('settings')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen Content: Dashboard -->
+    <div id="tab-dashboard" class="app-content">
+      <!-- Monthly Earnings Card -->
+      <div class="card lux-glow">
+        <div class="card-label">Ganhos Estimados do Mês</div>
+        <div class="earnings-val" id="total-earnings">R$ 3.420,00</div>
+        <div class="earnings-sub">Baseado em 38h faturadas em Setembro</div>
+      </div>
+
+      <!-- Active Timer Widget -->
+      <div class="card" id="timer-box">
+        <div class="card-label" id="timer-status-tag">Sessão em Andamento</div>
+        <div class="timer-display">
+          <div class="timer-clock" id="clock-time">01:24:18</div>
+          <div class="timer-client" id="clock-client">Cliente: TechCorp Solutions</div>
+          <div class="timer-desc" id="clock-desc">Refatoração de API & Telas</div>
+        </div>
+        <div class="timer-actions">
+          <button class="btn btn-secondary" id="btn-pause" onclick="togglePause()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            <span id="pause-text">Pausar</span>
+          </button>
+          <button class="btn btn-danger" onclick="stopTimer()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14"></rect>
+            </svg>
+            Finalizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Gemini AI Feature (Planned Evolution) -->
+      <div class="ai-banner" onclick="openModal('gemini')">
+        <div class="ai-sparkle">✨</div>
+        <div>
+          <h4 style="font-size: 13px; font-weight: 700; color: #FFF;">Análise Mensal com Gemini AI</h4>
+          <p style="font-size: 12px; color: var(--lux-on-surface-variant);">Toque para gerar insights de faturamento e horas com IA</p>
+        </div>
+      </div>
+
+      <!-- Recent Sessions Section -->
+      <div class="section-title">
+        <span>Sessões Recentes</span>
+        <button class="tool-chip" style="font-size: 11px; padding: 4px 10px;" onclick="openModal('manual')">+ Manual</button>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>Design de Landing Page</h4>
+          <p>Studio Bravo • Ontem</p>
+        </div>
+        <div class="session-meta">
+          <div class="session-price">R$ 450,00</div>
+          <div class="session-duration">3h 00m</div>
+        </div>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>Correção de Bug Checkout</h4>
+          <p>Loja Mais • 14/09</p>
+        </div>
+        <div class="session-meta">
+          <div class="session-price">R$ 280,00</div>
+          <div class="session-duration">1h 45m</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen Content: Clients -->
+    <div id="tab-clients" class="app-content" style="display: none;">
+      <div class="section-title">
+        <span>Clientes Cadastrados</span>
+        <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; flex: none;" onclick="openModal('client')">+ Novo Cliente</button>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>TechCorp Solutions</h4>
+          <p>R$ 150,00 / hora</p>
+        </div>
+        <div class="session-meta">
+          <span class="status-badge" style="color: var(--lux-primary)">Ativo</span>
+        </div>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>Studio Bravo</h4>
+          <p>R$ 150,00 / hora</p>
+        </div>
+        <div class="session-meta">
+          <span class="status-badge">Ativo</span>
+        </div>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>Loja Mais</h4>
+          <p>R$ 160,00 / hora</p>
+        </div>
+        <div class="session-meta">
+          <span class="status-badge">Ativo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen Content: Reports -->
+    <div id="tab-reports" class="app-content" style="display: none;">
+      <div class="card lux-glow">
+        <div class="card-label">Relatório de Setembro 2026</div>
+        <div class="earnings-val">R$ 3.420,00</div>
+        <div class="earnings-sub">38 horas faturadas no período</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Ações de Fechamento</div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button class="btn btn-secondary" onclick="alert('Exportando relatório em CSV...')">📄 Exportar CSV</button>
+          <button class="btn btn-primary" onclick="alert('Gerando fatura PDF formatada...')">📑 Gerar PDF</button>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span>Horas por Cliente</span>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>TechCorp Solutions</h4>
+          <p>20 horas faturadas</p>
+        </div>
+        <div class="session-meta">
+          <div class="session-price">R$ 2.000,00</div>
+        </div>
+      </div>
+
+      <div class="session-item">
+        <div class="session-info">
+          <h4>Studio Bravo</h4>
+          <p>12 horas faturadas</p>
+        </div>
+        <div class="session-meta">
+          <div class="session-price">R$ 960,00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="switchTab('dashboard')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('clients')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span>Clientes</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('reports')">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        <span>Relatórios</span>
+      </button>
+    </div>
+
+    <!-- Modal Dialogs -->
+    <div id="modal-container" class="modal-overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Interactive Controls Outside -->
+  <div class="controls-panel">
+    <div class="tool-chip" onclick="startNewSessionPrompt()">▶ Iniciar Nova Sessão</div>
+    <div class="tool-chip" onclick="openModal('gemini')">✨ Simular IA Gemini</div>
+    <div class="tool-chip" onclick="openModal('settings')">⚙ Configurações de Empresa</div>
+    <div class="tool-chip" onclick="switchTab('reports')">📊 Visualizar Relatórios</div>
+  </div>
+
+  <script>
+    let seconds = 5058; // 1h 24m 18s
+    let isPaused = false;
+    let timerRunning = true;
+    let timerInterval = null;
+
+    function formatTime(totalSec) {
+      const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+      const s = String(totalSec % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function runTimer() {
+      timerInterval = setInterval(() => {
+        if (!isPaused && timerRunning) {
+          seconds++;
+          document.getElementById('clock-time').textContent = formatTime(seconds);
+        }
+      }, 1000);
+    }
+    runTimer();
+
+    function togglePause() {
+      if (!timerRunning) return;
+      isPaused = !isPaused;
+      const pauseBtnText = document.getElementById('pause-text');
+      const statusTag = document.getElementById('timer-status-tag');
+      if (isPaused) {
+        pauseBtnText.textContent = 'Retomar';
+        statusTag.textContent = 'Sessão Pausada';
+        statusTag.style.color = 'var(--lux-warning)';
+      } else {
+        pauseBtnText.textContent = 'Pausar';
+        statusTag.textContent = 'Sessão em Andamento';
+        statusTag.style.color = 'var(--lux-primary)';
+      }
+    }
+
+    function stopTimer() {
+      timerRunning = false;
+      clearInterval(timerInterval);
+      document.getElementById('timer-status-tag').textContent = 'Sessão Concluída';
+      alert('Sessão finalizada com sucesso! Ganhos adicionados ao mês.');
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tab-dashboard').style.display = tab === 'dashboard' ? 'flex' : 'none';
+      document.getElementById('tab-clients').style.display = tab === 'clients' ? 'flex' : 'none';
+      document.getElementById('tab-reports').style.display = tab === 'reports' ? 'flex' : 'none';
+
+      const navs = document.querySelectorAll('.nav-item');
+      navs.forEach(n => n.classList.remove('active'));
+
+      const titles = {
+        dashboard: 'TempoTrack',
+        clients: 'Meus Clientes',
+        reports: 'Relatórios'
+      };
+      document.getElementById('screen-title').textContent = titles[tab];
+
+      if (tab === 'dashboard') navs[0].classList.add('active');
+      if (tab === 'clients') navs[1].classList.add('active');
+      if (tab === 'reports') navs[2].classList.add('active');
+    }
+
+    function openModal(type) {
+      const container = document.getElementById('modal-container');
+      const body = document.getElementById('modal-body');
+
+      if (type === 'gemini') {
+        body.innerHTML = `
+          <div class="modal-title">✨ Insights Inteligentes do Gemini</div>
+          <p style="font-size: 13px; color: var(--lux-on-surface-variant); margin-bottom: 14px;">
+            Com base nas suas 38 horas trabalhadas em Setembro:
+          </p>
+          <div style="background: var(--lux-surface-variant); padding: 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+            • <b>TechCorp Solutions</b> representou 58% da sua receita mensal.<br>
+            • Sua taxa média efetiva foi de <b>R$ 90/hora</b>.<br>
+            • 💡 <i>Recomendação de IA:</i> Você tem 12h faturáveis disponíveis na próxima semana para fechar a meta de R$ 4.500.
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" onclick="closeModal()">Fechar Análise</button>
+        `;
+      } else if (type === 'settings') {
+        body.innerHTML = `
+          <div class="modal-title">⚙ Configurar Empresa</div>
+          <input class="input-field" placeholder="Nome da Empresa / Profissional" value="Marcos Brandler">
+          <input class="input-field" placeholder="CNPJ / CPF" value="00.000.000/0001-00">
+          <input class="input-field" placeholder="E-mail de Contato" value="contato@empresa.com">
+          <button class="btn btn-primary" style="width: 100%;" onclick="closeModal()">Salvar Alterações</button>
+        `;
+      } else if (type === 'client') {
+        body.innerHTML = `
+          <div class="modal-title">+ Cadastrar Novo Cliente</div>
+          <input class="input-field" id="new-client-name" placeholder="Nome do Cliente">
+          <input class="input-field" id="new-client-rate" placeholder="Valor da Hora (Ex: 150.00)" type="number">
+          <button class="btn btn-primary" style="width: 100%;" onclick="alert('Cliente salvo!'); closeModal();">Cadastrar</button>
+        `;
+      } else if (type === 'manual') {
+        body.innerHTML = `
+          <div class="modal-title">+ Adicionar Sessão Manual</div>
+          <input class="input-field" placeholder="Descrição da Tarefa">
+          <input class="input-field" placeholder="Horas trabalhadas (Ex: 2.5)" type="number">
+          <button class="btn btn-primary" style="width: 100%;" onclick="alert('Sessão manual adicionada!'); closeModal();">Registrar</button>
+        `;
+      }
+      container.classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-container').classList.remove('open');
+    }
+
+    function startNewSessionPrompt() {
+      seconds = 0;
+      timerRunning = true;
+      isPaused = false;
+      document.getElementById('clock-time').textContent = '00:00:00';
+      document.getElementById('timer-status-tag').textContent = 'Sessão em Andamento';
+      document.getElementById('timer-status-tag').style.color = 'var(--lux-primary)';
+      switchTab('dashboard');
+    }
+  </script>
+</body>
+</html>
