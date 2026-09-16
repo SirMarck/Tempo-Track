@@ -5,13 +5,28 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.Client
 import com.example.data.Session
-import com.example.data.TimeTrackerRepository
+import com.example.data.gemini.ClientSummaryData
+import com.example.data.gemini.GeminiRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class TimeTrackerViewModel(private val repository: TimeTrackerRepository) : ViewModel() {
+sealed class GeminiAnalysisState {
+    object Idle : GeminiAnalysisState()
+    object Loading : GeminiAnalysisState()
+    data class Success(val analysis: String) : GeminiAnalysisState()
+    data class Error(val message: String) : GeminiAnalysisState()
+}
+
+class TimeTrackerViewModel(
+    private val repository: TimeTrackerRepository,
+    private val geminiRepository: GeminiRepository = GeminiRepository()
+) : ViewModel() {
+
+    private val _geminiAnalysisState = MutableStateFlow<GeminiAnalysisState>(GeminiAnalysisState.Idle)
+    val geminiAnalysisState: StateFlow<GeminiAnalysisState> = _geminiAnalysisState
 
     val clients: StateFlow<List<Client>> = repository.allClients
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -139,13 +154,44 @@ class TimeTrackerViewModel(private val repository: TimeTrackerRepository) : View
             )
         }
     }
+
+    fun requestMonthlyAnalysis(
+        monthName: String,
+        totalEarnings: Double,
+        totalHours: Double,
+        clientSummaries: List<ClientSummaryData>
+    ) {
+        viewModelScope.launch {
+            _geminiAnalysisState.value = GeminiAnalysisState.Loading
+            val result = geminiRepository.analyzeMonthlyReport(
+                monthName = monthName,
+                totalEarnings = totalEarnings,
+                totalHours = totalHours,
+                clientSummaries = clientSummaries
+            )
+            result.onSuccess { analysis ->
+                _geminiAnalysisState.value = GeminiAnalysisState.Success(analysis)
+            }.onFailure { error ->
+                _geminiAnalysisState.value = GeminiAnalysisState.Error(
+                    error.localizedMessage ?: "Erro ao comunicar com a IA do Gemini."
+                )
+            }
+        }
+    }
+
+    fun clearGeminiAnalysis() {
+        _geminiAnalysisState.value = GeminiAnalysisState.Idle
+    }
 }
 
-class TimeTrackerViewModelFactory(private val repository: TimeTrackerRepository) : ViewModelProvider.Factory {
+class TimeTrackerViewModelFactory(
+    private val repository: TimeTrackerRepository,
+    private val geminiRepository: GeminiRepository = GeminiRepository()
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TimeTrackerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TimeTrackerViewModel(repository) as T
+            return TimeTrackerViewModel(repository, geminiRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

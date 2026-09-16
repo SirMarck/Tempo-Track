@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.Client
 import com.example.data.Session
 import com.example.utils.FormatUtils
@@ -21,6 +22,16 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.data.gemini.ClientSummaryData
+import com.example.viewmodel.GeminiAnalysisState
 import com.example.ui.theme.luxBorder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,6 +70,46 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
             }
         }
         data
+    }
+
+    val geminiState by viewModel.geminiAnalysisState.collectAsState()
+
+    val totalEarnings = remember(reportData) {
+        reportData.entries.sumOf { (client, clientSessions) ->
+            clientSessions.sumOf { session ->
+                val duration = maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
+                val originalValue = (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
+                val discountPctVal = originalValue * (session.discountPercentage / 100.0)
+                maxOf(0.0, originalValue - discountPctVal - session.discountValue)
+            }
+        }
+    }
+
+    val totalHours = remember(reportData) {
+        val totalMillis = reportData.values.flatten().sumOf { session ->
+            maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
+        }
+        totalMillis.toDouble() / (1000 * 60 * 60)
+    }
+
+    val clientSummaries = remember(reportData) {
+        reportData.map { (client, clientSessions) ->
+            val durationMillis = clientSessions.sumOf { session ->
+                maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
+            }
+            val hours = durationMillis.toDouble() / (1000 * 60 * 60)
+            val billed = clientSessions.sumOf { session ->
+                val orig = (maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration).toDouble() / (1000 * 60 * 60)) * client.hourlyRate
+                val disc = orig * (session.discountPercentage / 100.0) + session.discountValue
+                maxOf(0.0, orig - disc)
+            }
+            ClientSummaryData(
+                clientName = client.name,
+                totalHours = hours,
+                totalBilled = billed,
+                hourlyRate = client.hourlyRate
+            )
+        }
     }
 
     Scaffold(
@@ -139,6 +190,47 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
                     Text("Nenhum dado para este mês.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .luxBorder(RoundedCornerShape(12.dp))
+                        .clickable {
+                            viewModel.requestMonthlyAnalysis(
+                                monthName = monthName,
+                                totalEarnings = totalEarnings,
+                                totalHours = totalHours,
+                                clientSummaries = clientSummaries
+                            )
+                        },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text("✨", style = MaterialTheme.typography.headlineSmall)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Análise Inteligente com Gemini AI",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Toque para gerar insights de faturamento e produtividade",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(reportData.keys.toList()) { client ->
                         ClientReportCard(client, reportData[client]!!, monthName)
@@ -153,6 +245,72 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 
             if (showAboutDialog) {
                 AboutDialog(onDismiss = { showAboutDialog = false })
+            }
+
+            when (val state = geminiState) {
+                is GeminiAnalysisState.Loading -> {
+                    AlertDialog(
+                        onDismissRequest = { /* Não fecha durante o carregamento */ },
+                        title = { Text("✨ Gemini AI") },
+                        text = {
+                            Row(
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                Text("Analisando faturamento e horas de $monthName com IA...")
+                            }
+                        },
+                        confirmButton = {}
+                    )
+                }
+                is GeminiAnalysisState.Success -> {
+                    AlertDialog(
+                        onDismissRequest = { viewModel.clearGeminiAnalysis() },
+                        title = { Text("✨ Análise de $monthName", color = MaterialTheme.colorScheme.primary) },
+                        text = {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                Text(
+                                    text = state.analysis,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    lineHeight = 20.sp
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { viewModel.clearGeminiAnalysis() }) {
+                                Text("Fechar")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Análise Gemini", state.analysis)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "Análise copiada com sucesso!", Toast.LENGTH_SHORT).show()
+                            }) {
+                                Text("Copiar")
+                            }
+                        }
+                    )
+                }
+                is GeminiAnalysisState.Error -> {
+                    AlertDialog(
+                        onDismissRequest = { viewModel.clearGeminiAnalysis() },
+                        title = { Text("Aviso do Gemini AI") },
+                        text = { Text(state.message) },
+                        confirmButton = {
+                            TextButton(onClick = { viewModel.clearGeminiAnalysis() }) {
+                                Text("Entendi")
+                            }
+                        }
+                    )
+                }
+                GeminiAnalysisState.Idle -> {}
             }
         }
     }
