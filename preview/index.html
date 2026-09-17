@@ -3,895 +3,698 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TempoTrack - Preview & Simulador Interativo</title>
+  <title>TempoTrack - Preview Vaulto</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --lux-primary: #6BF5A5;
-      --lux-on-primary: #092918;
-      --lux-primary-container: #1C422A;
-      --lux-on-primary-container: #C4FFDC;
-      --lux-secondary: #3FEA88;
-      --lux-background: #111713;
-      --lux-on-background: #E8ECE9;
-      --lux-surface: #1A221C;
-      --lux-on-surface: #E8ECE9;
-      --lux-surface-variant: #223126;
-      --lux-on-surface-variant: #AAB8AF;
-      --lux-outline: #3A5244;
-      --lux-danger: #FF6B6B;
-      --lux-warning: #FFD166;
+      /* Vaulto Dark Palette */
+      --bg: #0A0B0E;
+      --surface: #121317;
+      --surface-var: #191B22;
+      --outline: #1E2028;
+      --primary: #FF5E2B;
+      --on-primary: #FFFFFF;
+      --primary-container: #2A1208;
+      --on-primary-container: #FFCCB8;
+      --secondary: #00F29D;
+      --on-secondary: #002619;
+      --secondary-container: #003D26;
+      --on-bg: #E8E9F0;
+      --on-surface: #DDE0EB;
+      --on-surface-var: #8B90A8;
+      --error: #FF5252;
+      --glass-stroke: rgba(255,255,255,0.15);
+      --glow-orange: rgba(255,94,43,0.20);
+      --glow-green: rgba(0,242,157,0.13);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        -webkit-font-smoothing: antialiased; }
 
     body {
-      background: #0a0d0b;
-      color: var(--lux-on-background);
+      background: var(--bg);
+      color: var(--on-bg);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      overflow-x: hidden;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px; overflow-x: hidden;
     }
 
     /* Ambient glow */
     body::before {
-      content: '';
-      position: fixed;
-      top: 10%;
-      left: 50%;
+      content: ''; position: fixed; top: 8%; left: 50%;
       transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(107, 245, 165, 0.08) 0%, rgba(0,0,0,0) 70%);
-      z-index: 0;
-      pointer-events: none;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, var(--glow-orange) 0%, transparent 70%);
+      z-index: 0; pointer-events: none;
     }
 
-    .top-header {
-      z-index: 1;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
+    .top-header { z-index: 1; text-align: center; margin-bottom: 20px; }
     .top-header h1 {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #FFF 30%, var(--lux-primary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #FFF 30%, var(--primary) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       margin-bottom: 6px;
     }
+    .top-header p { color: var(--on-surface-var); font-size: 14px; }
 
-    .top-header p {
-      color: var(--lux-on-surface-variant);
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      background: var(--lux-surface-variant);
-      border: 1px solid var(--lux-outline);
-      border-radius: 20px;
-      font-size: 12px;
-      color: var(--lux-primary);
-      font-weight: 600;
-    }
-
-    .status-badge::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      background: var(--lux-primary);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--lux-primary);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    /* Phone Mockup Frame */
-    .phone-container {
+    /* Phone frame */
+    .phone-frame {
+      z-index: 1; width: 375px; height: 720px;
+      border-radius: 36px;
+      border: 2px solid var(--glass-stroke);
+      background: var(--bg);
+      box-shadow: 0 0 60px var(--glow-orange), 0 8px 32px rgba(0,0,0,0.5);
+      overflow: hidden; display: flex; flex-direction: column;
       position: relative;
-      width: 390px;
-      height: 820px;
-      background: var(--lux-background);
-      border-radius: 46px;
-      border: 10px solid #28332a;
-      box-shadow: 
-        0 25px 60px rgba(0, 0, 0, 0.8),
-        0 0 0 1px rgba(255, 255, 255, 0.08),
-        0 0 50px rgba(107, 245, 165, 0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      z-index: 2;
     }
 
-    /* Camera Island */
-    .camera-notch {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90px;
-      height: 22px;
-      background: #000;
-      border-radius: 20px;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 8px;
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 20px; font-size: 12px; font-weight: 600;
+      color: var(--on-surface-var); background: var(--bg);
     }
 
-    .camera-lens {
-      width: 10px;
-      height: 10px;
-      background: #111e15;
-      border: 1px solid #203525;
-      border-radius: 50%;
-    }
-
-    /* Screen Top App Bar */
+    /* Top App Bar */
     .app-bar {
-      padding: 42px 18px 12px;
-      background: rgba(26, 34, 28, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--lux-outline);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline);
     }
-
-    .app-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #FFF;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .app-bar-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .icon-btn {
-      background: none;
-      border: none;
-      color: var(--lux-on-surface-variant);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-      border-radius: 8px;
+    .app-bar h2 { font-size: 18px; font-weight: 700; color: var(--on-bg); }
+    .app-bar-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--surface-var); border: 1px solid var(--outline);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--on-surface-var); font-size: 16px;
       transition: all 0.2s;
     }
+    .app-bar-icon:hover { background: var(--primary); color: var(--on-primary); }
 
-    .icon-btn:hover {
-      color: var(--lux-primary);
-      background: var(--lux-surface-variant);
-    }
-
-    /* Main Scroll Content */
-    .app-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    /* Content area */
+    .screen-content {
+      flex: 1; overflow-y: auto; padding: 16px;
+      background: linear-gradient(180deg, var(--bg) 0%, #0D0F13 40%, #080A0D 100%);
     }
 
-    .app-content::-webkit-scrollbar {
-      width: 4px;
+    /* Bottom Nav */
+    .bottom-nav {
+      display: flex; background: var(--surface);
+      border-top: 1px solid var(--outline);
     }
-    .app-content::-webkit-scrollbar-thumb {
-      background: var(--lux-outline);
-      border-radius: 4px;
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 10px 0 8px; cursor: pointer; transition: all 0.2s;
+      color: var(--on-surface-var); font-size: 11px; font-weight: 500;
+      gap: 3px; border: none; background: none;
     }
+    .nav-tab.active { color: var(--primary); }
+    .nav-tab .icon { font-size: 20px; }
+    .nav-tab:hover { color: var(--primary); }
 
     /* Cards */
     .card {
-      background: var(--lux-surface);
-      border: 1px solid var(--lux-outline);
-      border-radius: 20px;
-      padding: 18px;
-      position: relative;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    }
-
-    .card.lux-glow {
-      border: 1px solid rgba(107, 245, 165, 0.35);
-      box-shadow: 0 4px 24px rgba(107, 245, 165, 0.12);
-    }
-
-    .card-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--lux-on-surface-variant);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 6px;
-    }
-
-    .earnings-val {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--lux-primary);
-      font-family: 'JetBrains Mono', monospace;
-      letter-spacing: -1px;
-    }
-
-    .earnings-sub {
-      font-size: 12px;
-      color: var(--lux-on-surface-variant);
-      margin-top: 4px;
-    }
-
-    /* Active Timer Box */
-    .timer-display {
-      text-align: center;
-      padding: 12px 0;
-    }
-
-    .timer-clock {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 44px;
-      font-weight: 800;
-      color: #FFF;
-      letter-spacing: -1.5px;
-      text-shadow: 0 0 20px rgba(107, 245, 165, 0.3);
-    }
-
-    .timer-client {
-      font-size: 14px;
-      color: var(--lux-primary);
-      font-weight: 600;
-      margin-top: 4px;
-    }
-
-    .timer-desc {
-      font-size: 13px;
-      color: var(--lux-on-surface-variant);
-      margin-top: 2px;
-    }
-
-    .timer-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: var(--lux-primary);
-      color: var(--lux-on-primary);
-      box-shadow: 0 4px 14px rgba(107, 245, 165, 0.3);
-    }
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(107, 245, 165, 0.4);
-    }
-
-    .btn-secondary {
-      background: var(--lux-surface-variant);
-      color: var(--lux-on-surface);
-      border: 1px solid var(--lux-outline);
-    }
-    .btn-secondary:hover {
-      background: rgba(107, 245, 165, 0.15);
-      border-color: var(--lux-primary);
-    }
-
-    .btn-danger {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--lux-danger);
-      border: 1px solid rgba(255, 107, 107, 0.3);
-    }
-    .btn-danger:hover {
-      background: rgba(255, 107, 107, 0.25);
-    }
-
-    /* AI Card (New Gemini feature) */
-    .ai-banner {
-      background: linear-gradient(135deg, rgba(28, 66, 42, 0.7) 0%, rgba(26, 34, 28, 0.9) 100%);
-      border: 1px solid rgba(107, 245, 165, 0.4);
-      border-radius: 18px;
-      padding: 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .ai-banner:hover {
-      transform: scale(1.02);
-      border-color: var(--lux-primary);
-    }
-
-    .ai-sparkle {
-      width: 36px;
-      height: 36px;
-      background: var(--lux-primary-container);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--lux-primary);
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    /* Session List */
-    .section-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #FFF;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .session-item {
-      background: var(--lux-surface);
-      border: 1px solid var(--lux-outline);
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: 0.2s;
-    }
-
-    .session-item:hover {
-      border-color: rgba(107, 245, 165, 0.3);
-      background: #1e2821;
-    }
-
-    .session-info h4 {
-      font-size: 14px;
-      font-weight: 700;
-      color: #FFF;
-    }
-
-    .session-info p {
-      font-size: 12px;
-      color: var(--lux-on-surface-variant);
-      margin-top: 2px;
-    }
-
-    .session-meta {
-      text-align: right;
-    }
-
-    .session-price {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--lux-primary);
-    }
-
-    .session-duration {
-      font-size: 11px;
-      color: var(--lux-on-surface-variant);
-      margin-top: 2px;
-    }
-
-    /* Bottom Navigation Bar */
-    .bottom-nav {
-      height: 68px;
-      background: var(--lux-surface);
-      border-top: 1px solid var(--lux-outline);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      flex-shrink: 0;
-      padding-bottom: 6px;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: var(--lux-on-surface-variant);
-      font-size: 11px;
-      font-weight: 600;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 6px 16px;
-      border-radius: 12px;
-      transition: all 0.2s;
-    }
-
-    .nav-item.active {
-      color: var(--lux-primary);
-      background: var(--lux-primary-container);
-    }
-
-    .nav-item svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
-    }
-
-    /* Dialog Modal */
-    .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: 0.2s;
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-card {
-      background: var(--lux-surface);
-      border: 1px solid var(--lux-outline);
-      border-radius: 24px;
-      padding: 22px;
-      width: 100%;
-      max-width: 320px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    }
-
-    .modal-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 14px;
-      color: #FFF;
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--lux-background);
-      border: 1px solid var(--lux-outline);
-      border-radius: 12px;
-      color: #FFF;
-      font-size: 14px;
+      background: var(--surface);
+      border: 1px solid var(--glass-stroke);
+      border-radius: 14px; padding: 16px;
       margin-bottom: 12px;
-      outline: none;
+      transition: all 0.3s;
     }
-    .input-field:focus {
-      border-color: var(--lux-primary);
+    .card:hover { border-color: rgba(255,94,43,0.3); }
+    .card-glow {
+      box-shadow: 0 0 20px var(--glow-orange), inset 0 1px 0 var(--glass-stroke);
     }
-
-    /* Interactive controls outside phone */
-    .controls-panel {
-      margin-top: 24px;
-      z-index: 1;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
+    .card-green {
+      border-color: rgba(0,242,157,0.3);
+      box-shadow: 0 0 16px var(--glow-green);
     }
 
-    .tool-chip {
-      background: #1a221c;
-      border: 1px solid var(--lux-outline);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      color: var(--lux-on-background);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: 0.2s;
+    .card-title {
+      font-size: 13px; font-weight: 600; color: var(--on-surface-var);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+    }
+    .card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px; font-weight: 700; color: var(--secondary);
+    }
+    .card-value.orange { color: var(--primary); }
+    .card-sub { font-size: 12px; color: var(--on-surface-var); margin-top: 4px; }
+
+    /* Timer */
+    .timer-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 42px; font-weight: 700;
+      color: var(--secondary);
+      text-align: center;
+      text-shadow: 0 0 30px var(--glow-green);
+      letter-spacing: 2px;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .pulse-dot {
+      display: inline-block; width: 10px; height: 10px;
+      background: var(--secondary); border-radius: 50%;
+      animation: pulse 1.5s infinite; margin-right: 8px;
+      box-shadow: 0 0 8px var(--glow-green);
     }
 
-    .tool-chip:hover {
-      background: var(--lux-primary-container);
-      border-color: var(--lux-primary);
-      color: var(--lux-primary);
+    /* FAB */
+    .fab {
+      position: absolute; bottom: 72px; right: 16px;
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--primary); color: var(--on-primary);
+      border: none; font-size: 28px; font-weight: 300;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px var(--glow-orange);
+      transition: all 0.2s;
     }
+    .fab:hover { transform: scale(1.08); box-shadow: 0 6px 30px var(--glow-orange); }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px; border-radius: 10px; font-weight: 600;
+      font-size: 14px; cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: var(--on-primary); }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-outline {
+      background: transparent; color: var(--on-surface);
+      border: 1px solid var(--glass-stroke);
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Tag chips */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .chip {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      border: 1px solid var(--outline); color: var(--on-surface-var);
+      cursor: pointer; transition: all 0.2s; background: var(--surface-var);
+    }
+    .chip.active {
+      background: var(--primary-container); color: var(--on-primary-container);
+      border-color: var(--primary);
+    }
+
+    /* Session list item */
+    .session-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; background: var(--surface-var);
+      border: 1px solid var(--outline); border-radius: 10px;
+      margin-bottom: 8px; transition: all 0.2s;
+    }
+    .session-item:hover { border-color: var(--glass-stroke); }
+    .session-name { font-weight: 600; font-size: 14px; color: var(--on-surface); }
+    .session-meta { font-size: 12px; color: var(--on-surface-var); }
+    .session-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600; color: var(--secondary); font-size: 14px;
+    }
+    .session-tag {
+      font-size: 10px; font-weight: 600; color: var(--primary);
+      background: var(--primary-container); padding: 2px 6px;
+      border-radius: 6px; margin-top: 3px; display: inline-block;
+    }
+
+    /* Client card */
+    .client-card {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 16px; background: var(--surface);
+      border: 1px solid var(--glass-stroke); border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .client-name { font-weight: 600; font-size: 15px; }
+    .client-rate { font-size: 13px; color: var(--on-surface-var); }
+    .client-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 8px; border: none;
+      background: var(--surface-var); color: var(--on-surface-var);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: all 0.2s;
+    }
+    .icon-btn.edit:hover { color: var(--primary); background: var(--primary-container); }
+    .icon-btn.delete:hover { color: var(--error); background: rgba(255,82,82,0.15); }
+
+    /* Filter chips (reports) */
+    .filter-row {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 12px;
+    }
+    .filter-chip {
+      padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      border: 1px solid var(--outline); color: var(--on-surface-var);
+      cursor: pointer; background: var(--surface-var); transition: all 0.2s;
+    }
+    .filter-chip.active {
+      background: var(--primary); color: var(--on-primary); border-color: var(--primary);
+    }
+
+    /* Gemini card */
+    .gemini-card {
+      background: linear-gradient(135deg, var(--surface-var) 0%, var(--primary-container) 100%);
+      border: 1px solid rgba(255,94,43,0.3);
+      border-radius: 12px; padding: 14px; margin-bottom: 12px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .gemini-card:hover { border-color: var(--primary); box-shadow: 0 0 16px var(--glow-orange); }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); display: none;
+      align-items: center; justify-content: center; z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--glass-stroke);
+      border-radius: 20px; padding: 24px; width: 90%;
+      max-height: 80%; overflow-y: auto;
+    }
+    .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .modal-close {
+      margin-top: 16px; width: 100%; padding: 10px;
+      border-radius: 10px; border: 1px solid var(--outline);
+      background: transparent; color: var(--on-surface-var);
+      cursor: pointer; font-weight: 600;
+    }
+
+    /* Segmented control date nav */
+    .date-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .date-nav-btn {
+      background: none; border: none; color: var(--primary);
+      font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .date-nav-label {
+      font-weight: 700; font-size: 15px; color: var(--on-bg);
+    }
+
+    /* Backup buttons */
+    .backup-row {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .backup-btn {
+      flex: 1; padding: 8px; border-radius: 8px;
+      border: 1px solid var(--outline); background: transparent;
+      color: var(--on-surface-var); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .backup-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Hide screens */
+    .screen { display: none; }
+    .screen.active { display: block; }
   </style>
 </head>
 <body>
 
-  <div class="top-header">
-    <h1>TempoTrack Live Simulator</h1>
-    <p>
-      <span class="status-badge">App Android Nativo (Jetpack Compose)</span>
-      <span>•</span>
-      <span>Package: <code>com.aistudio.tempotrack.kzmplo</code></span>
-    </p>
+<div class="top-header">
+  <h1>⏱ TempoTrack</h1>
+  <p>Simulador Interativo — Tema Vaulto</p>
+</div>
+
+<div class="phone-frame">
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span>21:56</span>
+    <span>● ● ●</span>
   </div>
 
-  <!-- Phone Mockup Device -->
-  <div class="phone-container">
-    <div class="camera-notch">
-      <div class="camera-lens"></div>
-    </div>
+  <!-- App bar -->
+  <div class="app-bar">
+    <h2 id="appBarTitle">Dashboard</h2>
+    <div class="app-bar-icon" onclick="toggleSettingsModal()">⚙</div>
+  </div>
 
-    <!-- Top App Bar -->
-    <div class="app-bar">
-      <div class="app-title">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lux-primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <span id="screen-title">TempoTrack</span>
-      </div>
-      <div class="app-bar-actions">
-        <button class="icon-btn" title="Configurar Empresa" onclick="openModal('settings')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
+  <!-- Screens -->
+  <div class="screen-content">
 
-    <!-- Screen Content: Dashboard -->
-    <div id="tab-dashboard" class="app-content">
-      <!-- Monthly Earnings Card -->
-      <div class="card lux-glow">
-        <div class="card-label">Ganhos Estimados do Mês</div>
-        <div class="earnings-val" id="total-earnings">R$ 3.420,00</div>
-        <div class="earnings-sub">Baseado em 38h faturadas em Setembro</div>
-      </div>
-
-      <!-- Active Timer Widget -->
-      <div class="card" id="timer-box">
-        <div class="card-label" id="timer-status-tag">Sessão em Andamento</div>
-        <div class="timer-display">
-          <div class="timer-clock" id="clock-time">01:24:18</div>
-          <div class="timer-client" id="clock-client">Cliente: TechCorp Solutions</div>
-          <div class="timer-desc" id="clock-desc">Refatoração de API & Telas</div>
+    <!-- ═══ DASHBOARD ═══ -->
+    <div id="screen-dashboard" class="screen active">
+      <!-- Active timer card -->
+      <div class="card card-green" id="timerCard">
+        <div class="card-title"><span class="pulse-dot"></span>SESSÃO ATIVA</div>
+        <div class="timer-display" id="timerDisplay">01:23:45</div>
+        <div class="card-sub" style="text-align:center; margin-top:8px;">
+          Cliente: <strong style="color:var(--on-surface)">Studio Design</strong>
+          <span class="session-tag">#Design</span>
         </div>
-        <div class="timer-actions">
-          <button class="btn btn-secondary" id="btn-pause" onclick="togglePause()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16"></rect>
-              <rect x="14" y="4" width="4" height="16"></rect>
-            </svg>
-            <span id="pause-text">Pausar</span>
-          </button>
-          <button class="btn btn-danger" onclick="stopTimer()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="5" y="5" width="14" height="14"></rect>
-            </svg>
-            Finalizar
-          </button>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn btn-outline" style="flex:1" onclick="toggleTimer()">⏸ Pausar</button>
+          <button class="btn btn-primary" style="flex:1" onclick="stopTimer()">⏹ Parar</button>
         </div>
       </div>
 
-      <!-- Gemini AI Feature (Planned Evolution) -->
-      <div class="ai-banner" onclick="openModal('gemini')">
-        <div class="ai-sparkle">✨</div>
-        <div>
-          <h4 style="font-size: 13px; font-weight: 700; color: #FFF;">Análise Mensal com Gemini AI</h4>
-          <p style="font-size: 12px; color: var(--lux-on-surface-variant);">Toque para gerar insights de faturamento e horas com IA</p>
-        </div>
-      </div>
-
-      <!-- Recent Sessions Section -->
-      <div class="section-title">
-        <span>Sessões Recentes</span>
-        <button class="tool-chip" style="font-size: 11px; padding: 4px 10px;" onclick="openModal('manual')">+ Manual</button>
-      </div>
-
-      <div class="session-item">
-        <div class="session-info">
-          <h4>Design de Landing Page</h4>
-          <p>Studio Bravo • Ontem</p>
-        </div>
-        <div class="session-meta">
-          <div class="session-price">R$ 450,00</div>
-          <div class="session-duration">3h 00m</div>
-        </div>
-      </div>
-
-      <div class="session-item">
-        <div class="session-info">
-          <h4>Correção de Bug Checkout</h4>
-          <p>Loja Mais • 14/09</p>
-        </div>
-        <div class="session-meta">
-          <div class="session-price">R$ 280,00</div>
-          <div class="session-duration">1h 45m</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Screen Content: Clients -->
-    <div id="tab-clients" class="app-content" style="display: none;">
-      <div class="section-title">
-        <span>Clientes Cadastrados</span>
-        <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; flex: none;" onclick="openModal('client')">+ Novo Cliente</button>
-      </div>
-
-      <div class="session-item">
-        <div class="session-info">
-          <h4>TechCorp Solutions</h4>
-          <p>R$ 150,00 / hora</p>
-        </div>
-        <div class="session-meta">
-          <span class="status-badge" style="color: var(--lux-primary)">Ativo</span>
-        </div>
-      </div>
-
-      <div class="session-item">
-        <div class="session-info">
-          <h4>Studio Bravo</h4>
-          <p>R$ 150,00 / hora</p>
-        </div>
-        <div class="session-meta">
-          <span class="status-badge">Ativo</span>
-        </div>
-      </div>
-
-      <div class="session-item">
-        <div class="session-info">
-          <h4>Loja Mais</h4>
-          <p>R$ 160,00 / hora</p>
-        </div>
-        <div class="session-meta">
-          <span class="status-badge">Ativo</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Screen Content: Reports -->
-    <div id="tab-reports" class="app-content" style="display: none;">
-      <div class="card lux-glow">
-        <div class="card-label">Relatório de Setembro 2026</div>
-        <div class="earnings-val">R$ 3.420,00</div>
-        <div class="earnings-sub">38 horas faturadas no período</div>
-      </div>
-
-      <div class="ai-banner" onclick="openModal('gemini')">
-        <div class="ai-sparkle">✨</div>
-        <div>
-          <h4 style="font-size: 13px; font-weight: 700; color: #FFF;">Análise Inteligente com Gemini AI</h4>
-          <p style="font-size: 12px; color: var(--lux-on-surface-variant);">Toque para gerar diagnóstico e insights de rentabilidade</p>
-        </div>
-      </div>
-
+      <!-- Earnings today -->
       <div class="card">
-        <div class="card-label">Ações de Fechamento</div>
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
-          <button class="btn btn-secondary" onclick="alert('Exportando relatório em CSV...')">📄 Exportar CSV</button>
-          <button class="btn btn-primary" onclick="alert('Gerando fatura PDF formatada...')">📑 Gerar PDF</button>
-        </div>
+        <div class="card-title">GANHOS HOJE</div>
+        <div class="card-value">R$ 487,50</div>
+        <div class="card-sub">3 sessões concluídas</div>
       </div>
 
-      <div class="section-title">
-        <span>Horas por Cliente</span>
-      </div>
+      <!-- Recent sessions -->
+      <div style="margin-top:4px;">
+        <div class="card-title" style="padding:0 0 8px;">SESSÕES RECENTES</div>
 
-      <div class="session-item">
-        <div class="session-info">
-          <h4>TechCorp Solutions</h4>
-          <p>20 horas faturadas</p>
-        </div>
-        <div class="session-meta">
-          <div class="session-price">R$ 2.000,00</div>
-        </div>
-      </div>
-
-      <div class="session-item">
-        <div class="session-info">
-          <h4>Studio Bravo</h4>
-          <p>12 horas faturadas</p>
-        </div>
-        <div class="session-meta">
-          <div class="session-price">R$ 960,00</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Navigation Bar -->
-    <div class="bottom-nav">
-      <button class="nav-item active" onclick="switchTab('dashboard')">
-        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-        <span>Dashboard</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('clients')">
-        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-        <span>Clientes</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('reports')">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-        <span>Relatórios</span>
-      </button>
-    </div>
-
-    <!-- Modal Dialogs -->
-    <div id="modal-container" class="modal-overlay" onclick="if(event.target===this) closeModal()">
-      <div class="modal-card" id="modal-body"></div>
-    </div>
-  </div>
-
-  <!-- Interactive Controls Outside -->
-  <div class="controls-panel">
-    <div class="tool-chip" onclick="startNewSessionPrompt()">▶ Iniciar Nova Sessão</div>
-    <div class="tool-chip" onclick="openModal('gemini')">✨ Simular IA Gemini</div>
-    <div class="tool-chip" onclick="openModal('settings')">⚙ Configurações de Empresa</div>
-    <div class="tool-chip" onclick="switchTab('reports')">📊 Visualizar Relatórios</div>
-  </div>
-
-  <script>
-    let seconds = 5058; // 1h 24m 18s
-    let isPaused = false;
-    let timerRunning = true;
-    let timerInterval = null;
-
-    function formatTime(totalSec) {
-      const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
-      const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
-      const s = String(totalSec % 60).padStart(2, '0');
-      return `${h}:${m}:${s}`;
-    }
-
-    function runTimer() {
-      timerInterval = setInterval(() => {
-        if (!isPaused && timerRunning) {
-          seconds++;
-          document.getElementById('clock-time').textContent = formatTime(seconds);
-        }
-      }, 1000);
-    }
-    runTimer();
-
-    function togglePause() {
-      if (!timerRunning) return;
-      isPaused = !isPaused;
-      const pauseBtnText = document.getElementById('pause-text');
-      const statusTag = document.getElementById('timer-status-tag');
-      if (isPaused) {
-        pauseBtnText.textContent = 'Retomar';
-        statusTag.textContent = 'Sessão Pausada';
-        statusTag.style.color = 'var(--lux-warning)';
-      } else {
-        pauseBtnText.textContent = 'Pausar';
-        statusTag.textContent = 'Sessão em Andamento';
-        statusTag.style.color = 'var(--lux-primary)';
-      }
-    }
-
-    function stopTimer() {
-      timerRunning = false;
-      clearInterval(timerInterval);
-      document.getElementById('timer-status-tag').textContent = 'Sessão Concluída';
-      alert('Sessão finalizada com sucesso! Ganhos adicionados ao mês.');
-    }
-
-    function switchTab(tab) {
-      document.getElementById('tab-dashboard').style.display = tab === 'dashboard' ? 'flex' : 'none';
-      document.getElementById('tab-clients').style.display = tab === 'clients' ? 'flex' : 'none';
-      document.getElementById('tab-reports').style.display = tab === 'reports' ? 'flex' : 'none';
-
-      const navs = document.querySelectorAll('.nav-item');
-      navs.forEach(n => n.classList.remove('active'));
-
-      const titles = {
-        dashboard: 'TempoTrack',
-        clients: 'Meus Clientes',
-        reports: 'Relatórios'
-      };
-      document.getElementById('screen-title').textContent = titles[tab];
-
-      if (tab === 'dashboard') navs[0].classList.add('active');
-      if (tab === 'clients') navs[1].classList.add('active');
-      if (tab === 'reports') navs[2].classList.add('active');
-    }
-
-    function openModal(type) {
-      const container = document.getElementById('modal-container');
-      const body = document.getElementById('modal-body');
-
-      if (type === 'gemini') {
-        body.innerHTML = `
-          <div class="modal-title">✨ Insights Inteligentes do Gemini</div>
-          <p style="font-size: 13px; color: var(--lux-on-surface-variant); margin-bottom: 14px;">
-            Com base nas suas 38 horas trabalhadas em Setembro:
-          </p>
-          <div style="background: var(--lux-surface-variant); padding: 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
-            • <b>TechCorp Solutions</b> representou 58% da sua receita mensal.<br>
-            • Sua taxa média efetiva foi de <b>R$ 90/hora</b>.<br>
-            • 💡 <i>Recomendação de IA:</i> Você tem 12h faturáveis disponíveis na próxima semana para fechar a meta de R$ 4.500.
+        <div class="session-item">
+          <div>
+            <div class="session-name">Startup XYZ</div>
+            <div class="session-meta">14:00 – 16:30 · 2h 30min</div>
+            <span class="session-tag">#Dev</span>
           </div>
-          <button class="btn btn-primary" style="width: 100%;" onclick="closeModal()">Fechar Análise</button>
-        `;
-      } else if (type === 'settings') {
-        body.innerHTML = `
-          <div class="modal-title">⚙ Configurar Empresa</div>
-          <input class="input-field" placeholder="Nome da Empresa / Profissional" value="Marcos Brandler">
-          <input class="input-field" placeholder="CNPJ / CPF" value="00.000.000/0001-00">
-          <input class="input-field" placeholder="E-mail de Contato" value="contato@empresa.com">
-          <button class="btn btn-primary" style="width: 100%;" onclick="closeModal()">Salvar Alterações</button>
-        `;
-      } else if (type === 'client') {
-        body.innerHTML = `
-          <div class="modal-title">+ Cadastrar Novo Cliente</div>
-          <input class="input-field" id="new-client-name" placeholder="Nome do Cliente">
-          <input class="input-field" id="new-client-rate" placeholder="Valor da Hora (Ex: 150.00)" type="number">
-          <button class="btn btn-primary" style="width: 100%;" onclick="alert('Cliente salvo!'); closeModal();">Cadastrar</button>
-        `;
-      } else if (type === 'manual') {
-        body.innerHTML = `
-          <div class="modal-title">+ Adicionar Sessão Manual</div>
-          <input class="input-field" placeholder="Descrição da Tarefa">
-          <input class="input-field" placeholder="Horas trabalhadas (Ex: 2.5)" type="number">
-          <button class="btn btn-primary" style="width: 100%;" onclick="alert('Sessão manual adicionada!'); closeModal();">Registrar</button>
-        `;
-      }
-      container.classList.add('open');
-    }
+          <div class="session-value">R$ 312,50</div>
+        </div>
 
-    function closeModal() {
-      document.getElementById('modal-container').classList.remove('open');
-    }
+        <div class="session-item">
+          <div>
+            <div class="session-name">Agência Criativa</div>
+            <div class="session-meta">10:00 – 11:10 · 1h 10min</div>
+            <span class="session-tag">#Reunião</span>
+          </div>
+          <div class="session-value">R$ 175,00</div>
+        </div>
 
-    function startNewSessionPrompt() {
-      seconds = 0;
+        <div class="session-item">
+          <div>
+            <div class="session-name">Studio Design</div>
+            <div class="session-meta">08:30 – 09:00 · 30min</div>
+            <span class="session-tag">#Suporte</span>
+          </div>
+          <div class="session-value">R$ 62,50</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CLIENTS ═══ -->
+    <div id="screen-clients" class="screen">
+      <div class="client-card">
+        <div>
+          <div class="client-name">Startup XYZ</div>
+          <div class="client-rate">Valor/hora: R$ 125,00</div>
+        </div>
+        <div class="client-actions">
+          <button class="icon-btn edit" title="Editar">✏️</button>
+          <button class="icon-btn delete" title="Excluir">🗑️</button>
+        </div>
+      </div>
+
+      <div class="client-card">
+        <div>
+          <div class="client-name">Agência Criativa</div>
+          <div class="client-rate">Valor/hora: R$ 150,00</div>
+        </div>
+        <div class="client-actions">
+          <button class="icon-btn edit" title="Editar">✏️</button>
+          <button class="icon-btn delete" title="Excluir">🗑️</button>
+        </div>
+      </div>
+
+      <div class="client-card">
+        <div>
+          <div class="client-name">Studio Design</div>
+          <div class="client-rate">Valor/hora: R$ 125,00</div>
+        </div>
+        <div class="client-actions">
+          <button class="icon-btn edit" title="Editar">✏️</button>
+          <button class="icon-btn delete" title="Excluir">🗑️</button>
+        </div>
+      </div>
+
+      <div class="client-card">
+        <div>
+          <div class="client-name">Tech Solutions</div>
+          <div class="client-rate">Valor/hora: R$ 180,00</div>
+        </div>
+        <div class="client-actions">
+          <button class="icon-btn edit" title="Editar">✏️</button>
+          <button class="icon-btn delete" title="Excluir">🗑️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REPORTS ═══ -->
+    <div id="screen-reports" class="screen">
+      <!-- Filter chips -->
+      <div class="filter-row">
+        <div class="filter-chip active" onclick="setFilter(this,'month')">Mês</div>
+        <div class="filter-chip" onclick="setFilter(this,'range')">Período</div>
+      </div>
+
+      <!-- Month navigation -->
+      <div class="date-nav" id="monthNav">
+        <button class="date-nav-btn">&lt; Anterior</button>
+        <span class="date-nav-label">Setembro 2026</span>
+        <button class="date-nav-btn">Próximo &gt;</button>
+      </div>
+
+      <!-- Custom range (hidden by default) -->
+      <div class="date-nav" id="rangeNav" style="display:none;">
+        <button class="btn btn-outline" style="flex:1;font-size:12px;">De: 01/09/2026</button>
+        <span style="margin:0 4px; color:var(--on-surface-var);">—</span>
+        <button class="btn btn-outline" style="flex:1;font-size:12px;">Até: 16/09/2026</button>
+      </div>
+
+      <!-- Gemini AI card -->
+      <div class="gemini-card" onclick="showGeminiModal()">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">✨</span>
+          <div>
+            <div style="font-weight:700; font-size:14px; color:var(--primary);">Análise com Gemini AI</div>
+            <div style="font-size:12px; color:var(--on-surface-var);">Toque para gerar insights</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report summary cards -->
+      <div style="display:flex; gap:10px; margin-bottom:12px;">
+        <div class="card" style="flex:1; text-align:center;">
+          <div class="card-title">HORAS</div>
+          <div class="card-value" style="font-size:22px;">38.5h</div>
+        </div>
+        <div class="card" style="flex:1; text-align:center;">
+          <div class="card-title">FATURADO</div>
+          <div class="card-value orange" style="font-size:22px;">R$ 5.237</div>
+        </div>
+      </div>
+
+      <!-- Client report items -->
+      <div class="session-item">
+        <div>
+          <div class="session-name">Startup XYZ</div>
+          <div class="session-meta">18.5h · 12 sessões</div>
+        </div>
+        <div class="session-value" style="color:var(--primary);">R$ 2.312,50</div>
+      </div>
+      <div class="session-item">
+        <div>
+          <div class="session-name">Agência Criativa</div>
+          <div class="session-meta">12h · 8 sessões</div>
+        </div>
+        <div class="session-value" style="color:var(--primary);">R$ 1.800,00</div>
+      </div>
+      <div class="session-item">
+        <div>
+          <div class="session-name">Studio Design</div>
+          <div class="session-meta">8h · 6 sessões</div>
+        </div>
+        <div class="session-value" style="color:var(--primary);">R$ 1.125,00</div>
+      </div>
+    </div>
+
+  </div><!-- /screen-content -->
+
+  <!-- FAB -->
+  <button class="fab" id="fabBtn" onclick="showStartModal()">+</button>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-tab active" onclick="switchTab('dashboard',this)">
+      <span class="icon">📊</span>Dashboard
+    </button>
+    <button class="nav-tab" onclick="switchTab('clients',this)">
+      <span class="icon">👥</span>Clientes
+    </button>
+    <button class="nav-tab" onclick="switchTab('reports',this)">
+      <span class="icon">📈</span>Relatórios
+    </button>
+  </div>
+
+  <!-- ═══ MODALS ═══ -->
+
+  <!-- Start Session Modal -->
+  <div class="modal-overlay" id="startModal">
+    <div class="modal">
+      <h3>Iniciar Trabalho</h3>
+      <div class="card-title">SELECIONE O CLIENTE</div>
+      <div style="margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+          <input type="radio" name="client" checked style="accent-color:var(--primary)"> Startup XYZ
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+          <input type="radio" name="client" style="accent-color:var(--primary)"> Agência Criativa
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+          <input type="radio" name="client" style="accent-color:var(--primary)"> Studio Design
+        </label>
+      </div>
+
+      <div class="card-title">CATEGORIA</div>
+      <div class="chip-row">
+        <span class="chip active">#Dev</span>
+        <span class="chip">#Reunião</span>
+        <span class="chip">#Design</span>
+        <span class="chip">#Suporte</span>
+        <span class="chip">#Consultoria</span>
+        <span class="chip">#Outro</span>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="card-title">DESCRIÇÃO</div>
+        <textarea placeholder="Descrição do serviço..." style="width:100%;height:60px;background:var(--surface-var);border:1px solid var(--outline);border-radius:8px;color:var(--on-surface);padding:10px;resize:none;font-size:13px;"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-outline" style="flex:1" onclick="closeModal('startModal')">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" onclick="closeModal('startModal')">Iniciar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gemini Modal -->
+  <div class="modal-overlay" id="geminiModal">
+    <div class="modal">
+      <h3 style="color:var(--primary);">✨ Análise de Setembro 2026</h3>
+      <div style="font-size:13px;line-height:1.6;color:var(--on-surface);">
+        <p><strong>📊 Resumo:</strong> Em Setembro você trabalhou <strong style="color:var(--secondary)">38.5 horas</strong> e faturou <strong style="color:var(--primary)">R$ 5.237,50</strong>.</p>
+        <br>
+        <p><strong>💡 Insights:</strong></p>
+        <ul style="padding-left:16px;margin-top:4px;">
+          <li>Startup XYZ é seu cliente mais rentável (44% do faturamento)</li>
+          <li>Seu valor médio por hora efetivo é R$ 136,04</li>
+          <li>Distribuição saudável entre 3 clientes</li>
+        </ul>
+        <br>
+        <p><strong>🎯 Recomendações:</strong></p>
+        <ul style="padding-left:16px;margin-top:4px;">
+          <li>Considere reajustar a taxa da Agência Criativa (R$ 150 → R$ 165)</li>
+          <li>Aumente sessões com Studio Design para melhor diversificação</li>
+        </ul>
+      </div>
+      <button class="modal-close" onclick="closeModal('geminiModal')">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h3>Configurações da Empresa</h3>
+      <div style="margin-bottom:12px;">
+        <div class="card-title">NOME DA EMPRESA</div>
+        <input value="Marcos Brandler Dev" style="width:100%;background:var(--surface-var);border:1px solid var(--outline);border-radius:8px;color:var(--on-surface);padding:10px;font-size:13px;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <div class="card-title">CNPJ</div>
+        <input value="12.345.678/0001-00" style="width:100%;background:var(--surface-var);border:1px solid var(--outline);border-radius:8px;color:var(--on-surface);padding:10px;font-size:13px;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <div class="card-title">DIA DE FECHAMENTO</div>
+        <input value="1" type="number" style="width:100%;background:var(--surface-var);border:1px solid var(--outline);border-radius:8px;color:var(--on-surface);padding:10px;font-size:13px;">
+      </div>
+
+      <div style="border-top:1px solid var(--outline);padding-top:12px;margin-top:4px;">
+        <div class="card-title">BACKUP DE DADOS</div>
+        <div class="backup-row">
+          <button class="backup-btn">📤 Exportar</button>
+          <button class="backup-btn">📥 Restaurar</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-outline" style="flex:1" onclick="closeModal('settingsModal')">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" onclick="closeModal('settingsModal')">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /phone-frame -->
+
+<script>
+  // ─── Tab switching ───
+  function switchTab(tab, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + tab).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+
+    const titles = { dashboard: 'Dashboard', clients: 'Meus Clientes', reports: 'Relatórios' };
+    document.getElementById('appBarTitle').textContent = titles[tab];
+
+    // Show/hide FAB
+    document.getElementById('fabBtn').style.display = tab === 'clients' ? 'flex' : (tab === 'dashboard' ? 'flex' : 'none');
+  }
+
+  // ─── Timer ───
+  let timerRunning = true;
+  let seconds = 5025; // 01:23:45
+  let timerInterval;
+
+  function updateTimer() {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    document.getElementById('timerDisplay').textContent =
+      String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  function startTimerTick() {
+    timerInterval = setInterval(() => { seconds++; updateTimer(); }, 1000);
+  }
+
+  function toggleTimer() {
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      event.target.textContent = '▶ Retomar';
+    } else {
+      startTimerTick();
       timerRunning = true;
-      isPaused = false;
-      document.getElementById('clock-time').textContent = '00:00:00';
-      document.getElementById('timer-status-tag').textContent = 'Sessão em Andamento';
-      document.getElementById('timer-status-tag').style.color = 'var(--lux-primary)';
-      switchTab('dashboard');
+      event.target.textContent = '⏸ Pausar';
     }
-  </script>
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    document.getElementById('timerCard').style.display = 'none';
+  }
+
+  startTimerTick();
+
+  // ─── Modals ───
+  function showStartModal() { document.getElementById('startModal').classList.add('show'); }
+  function showGeminiModal() { document.getElementById('geminiModal').classList.add('show'); }
+  function toggleSettingsModal() { document.getElementById('settingsModal').classList.add('show'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  // ─── Chip toggle ───
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  // ─── Filter mode ───
+  function setFilter(el, mode) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('monthNav').style.display = mode === 'month' ? 'flex' : 'none';
+    document.getElementById('rangeNav').style.display = mode === 'range' ? 'flex' : 'none';
+  }
+</script>
+
 </body>
 </html>
