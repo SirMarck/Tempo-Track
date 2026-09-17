@@ -29,7 +29,7 @@ sealed class UpdateResult {
 object UpdateManager {
 
     // Substitua pelo seu repo no GitHub: "usuario/repositorio"
-    private const val REPO_NAME = "SirMarck/Time-Counter"
+    private const val REPO_NAME = "SirMarck/Tempo-Track"
     private const val GITHUB_API_URL = "https://api.github.com/repos/$REPO_NAME/releases/latest"
 
     suspend fun checkForUpdates(context: Context): UpdateResult = withContext(Dispatchers.IO) {
