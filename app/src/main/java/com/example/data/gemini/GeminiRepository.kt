@@ -120,4 +120,87 @@ class GeminiRepository(
             Result.failure(e)
         }
     }
+
+    suspend fun parseSessionFromNaturalText(
+        userText: String,
+        availableClients: List<com.example.data.Client>
+    ): Result<ParsedQuickSession> = withContext(Dispatchers.IO) {
+        val apiKey = apiKeyProvider().trim()
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            return@withContext Result.failure(
+                IllegalStateException("Configure sua chave GEMINI_API_KEY no arquivo .env para usar o lançamento rápido por IA.")
+            )
+        }
+
+        val clientsListStr = availableClients.joinToString("\n") { "- ID: ${it.id}, Nome: ${it.name}" }
+
+        val prompt = """
+            Você é um assistente inteligente de gerenciamento de tempo. O usuário ditou ou digitou uma frase descrevendo um trabalho realizado:
+            "$userText"
+
+            Clientes cadastrados no app:
+            $clientsListStr
+
+            Tags disponíveis: #Dev, #Reunião, #Design, #Suporte, #Consultoria, #Outro
+
+            Extraia as informações e responda ESTRITAMENTE em formato JSON (sem blocos markdown ```json):
+            {
+              "clientId": <número do ID do cliente correspondente ou null>,
+              "clientName": "<nome do cliente identificado ou string vazia>",
+              "durationMinutes": <total em minutos como inteiro, ex: 90 para 1h30>,
+              "description": "<descrição concisa e profissional do que foi feito>",
+              "tag": "<uma das tags disponíveis acima com #>"
+            }
+        """.trimIndent()
+
+        try {
+            val request = GeminiRequest(
+                contents = listOf(
+                    GeminiContent(
+                        parts = listOf(GeminiPart(text = prompt))
+                    )
+                ),
+                generationConfig = GeminiGenerationConfig(
+                    temperature = 0.2,
+                    maxOutputTokens = 300
+                )
+            )
+
+            val response = apiService.generateContent(apiKey, request)
+            val rawText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                ?.replace("```json", "")?.replace("```", "")?.trim()
+
+            if (!rawText.isNullOrBlank()) {
+                val json = org.json.JSONObject(rawText)
+                val clientId = if (json.isNull("clientId")) null else json.optLong("clientId")
+                val clientName = json.optString("clientName", "")
+                val durationMinutes = json.optLong("durationMinutes", 60L)
+                val description = json.optString("description", userText)
+                val tag = json.optString("tag", "#Outro")
+
+                Result.success(
+                    ParsedQuickSession(
+                        clientId = clientId,
+                        clientName = clientName,
+                        durationMinutes = maxOf(1L, durationMinutes),
+                        description = description,
+                        tag = tag
+                    )
+                )
+            } else {
+                Result.failure(Exception("O Gemini não retornou dados para a frase."))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 }
+
+data class ParsedQuickSession(
+    val clientId: Long?,
+    val clientName: String,
+    val durationMinutes: Long,
+    val description: String,
+    val tag: String
+)

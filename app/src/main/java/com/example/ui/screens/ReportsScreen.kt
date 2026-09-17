@@ -50,18 +50,43 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
         set(Calendar.YEAR, currentYear)
     }.time).replaceFirstChar { it.uppercase() }
 
+    // Custom date range filter
+    var useCustomRange by remember { mutableStateOf(false) }
+    var customStartMillis by remember { mutableLongStateOf(
+        Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+        }.timeInMillis
+    ) }
+    var customEndMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    val customStartText = remember(customStartMillis) {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(java.util.Date(customStartMillis))
+    }
+    val customEndText = remember(customEndMillis) {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(java.util.Date(customEndMillis))
+    }
+
+    // Active filter label for display
+    val filterLabel = if (useCustomRange) "$customStartText — $customEndText" else monthName
+
     var showMenu by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Calculate report data
-    val reportData = remember(sessions, clients, currentMonth, currentYear) {
+    // Calculate report data — supports monthly or custom range filter
+    val reportData = remember(sessions, clients, currentMonth, currentYear, useCustomRange, customStartMillis, customEndMillis) {
         val data = mutableMapOf<Client, MutableList<Session>>()
         sessions.filter { it.endTime != null }.forEach { session ->
-            val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
-            if (cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear) {
+            val inRange = if (useCustomRange) {
+                session.startTime >= customStartMillis && session.startTime <= customEndMillis
+            } else {
+                val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
+                cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+            }
+            if (inRange) {
                 val client = clients.find { it.id == session.clientId }
                 if (client != null) {
                     if (!data.containsKey(client)) data[client] = mutableListOf()
@@ -167,20 +192,79 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)
         ) {
+            // ─── Filter mode segmented control ───────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                horizontalArrangement = Arrangement.Center
             ) {
-                TextButton(onClick = {
-                    if (currentMonth == 0) { currentMonth = 11; currentYear-- } else currentMonth--
-                }) { Text("< Anterior") }
-                
-                Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                
-                TextButton(onClick = {
-                    if (currentMonth == 11) { currentMonth = 0; currentYear++ } else currentMonth++
-                }) { Text("Próximo >") }
+                FilterChip(
+                    selected = !useCustomRange,
+                    onClick = { useCustomRange = false },
+                    label = { Text("Mês") },
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                FilterChip(
+                    selected = useCustomRange,
+                    onClick = { useCustomRange = true },
+                    label = { Text("Período") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (!useCustomRange) {
+                // Month navigation
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = {
+                        if (currentMonth == 0) { currentMonth = 11; currentYear-- } else currentMonth--
+                    }) { Text("< Anterior") }
+
+                    Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+                    TextButton(onClick = {
+                        if (currentMonth == 11) { currentMonth = 0; currentYear++ } else currentMonth++
+                    }) { Text("Próximo >") }
+                }
+            } else {
+                // Custom date range pickers
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance().apply { timeInMillis = customStartMillis }
+                            android.app.DatePickerDialog(
+                                context,
+                                { _, y, m, d ->
+                                    cal.set(y, m, d, 0, 0, 0)
+                                    customStartMillis = cal.timeInMillis
+                                },
+                                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)
+                            ).show()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("De: $customStartText", style = MaterialTheme.typography.labelMedium) }
+
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance().apply { timeInMillis = customEndMillis }
+                            android.app.DatePickerDialog(
+                                context,
+                                { _, y, m, d ->
+                                    cal.set(y, m, d, 23, 59, 59)
+                                    customEndMillis = cal.timeInMillis
+                                },
+                                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)
+                            ).show()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Até: $customEndText", style = MaterialTheme.typography.labelMedium) }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -196,7 +280,7 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
                         .luxBorder(RoundedCornerShape(12.dp))
                         .clickable {
                             viewModel.requestMonthlyAnalysis(
-                                monthName = monthName,
+                                monthName = filterLabel,
                                 totalEarnings = totalEarnings,
                                 totalHours = totalHours,
                                 clientSummaries = clientSummaries
@@ -233,14 +317,14 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(reportData.keys.toList()) { client ->
-                        ClientReportCard(client, reportData[client]!!, monthName)
+                        ClientReportCard(client, reportData[client]!!, filterLabel)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
 
             if (showSettingsDialog) {
-                CompanySettingsDialog(onDismiss = { showSettingsDialog = false })
+                CompanySettingsDialog(onDismiss = { showSettingsDialog = false }, viewModel = viewModel)
             }
 
             if (showAboutDialog) {
@@ -258,7 +342,7 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                Text("Analisando faturamento e horas de $monthName com IA...")
+                                Text("Analisando faturamento e horas de $filterLabel com IA...")
                             }
                         },
                         confirmButton = {}
@@ -267,7 +351,7 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
                 is GeminiAnalysisState.Success -> {
                     AlertDialog(
                         onDismissRequest = { viewModel.clearGeminiAnalysis() },
-                        title = { Text("✨ Análise de $monthName", color = MaterialTheme.colorScheme.primary) },
+                        title = { Text("✨ Análise de $filterLabel", color = MaterialTheme.colorScheme.primary) },
                         text = {
                             Column(
                                 modifier = Modifier

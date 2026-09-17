@@ -2,23 +2,36 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val LuxGreenPrimary = Color(0xFF6BF5A5)
-val LuxGreenOnPrimary = Color(0xFF092918)
-val LuxGreenPrimaryContainer = Color(0xFF1C422A)
-val LuxGreenOnPrimaryContainer = Color(0xFFC4FFDC)
+// ─── Vaulto Dark Palette ──────────────────────────────────────────────────────
 
-val LuxGreenSecondary = Color(0xFF3FEA88)
-val LuxGreenOnSecondary = Color(0xFF092918)
-val LuxGreenSecondaryContainer = Color(0xFF1E7547)
-val LuxGreenOnSecondaryContainer = Color(0xFFC4FFDC)
+// Backgrounds / Surfaces
+val VaultoBg          = Color(0xFF0A0B0E) // Obsidian black
+val VaultoSurface     = Color(0xFF121317) // Elevated surface
+val VaultoSurfaceVar  = Color(0xFF191B22) // Card / dialog surface
+val VaultoOutline     = Color(0xFF1E2028) // Subtle divider
 
-val LuxGreenBackground = Color(0xFF111713)
-val LuxGreenOnBackground = Color(0xFFE8ECE9)
+// Primary — Electric Orange (action, CTA, FAB)
+val VaultoPrimary       = Color(0xFFFF5E2B)
+val VaultoOnPrimary     = Color(0xFFFFFFFF)
+val VaultoPrimaryContainer    = Color(0xFF2A1208)
+val VaultoOnPrimaryContainer  = Color(0xFFFFCCB8)
 
-val LuxGreenSurface = Color(0xFF1A221C)
-val LuxGreenOnSurface = Color(0xFFE8ECE9)
+// Secondary — Neon Emerald (timer, earnings, live stats)
+val VaultoSecondary       = Color(0xFF00F29D)
+val VaultoOnSecondary     = Color(0xFF002619)
+val VaultoSecondaryContainer    = Color(0xFF003D26)
+val VaultoOnSecondaryContainer  = Color(0xFFB0FFE0)
 
-val LuxGreenSurfaceVariant = Color(0xFF223126)
-val LuxGreenOnSurfaceVariant = Color(0xFFAAB8AF)
+// Text
+val VaultoOnBg          = Color(0xFFE8E9F0)
+val VaultoOnSurface     = Color(0xFFDDE0EB)
+val VaultoOnSurfaceVar  = Color(0xFF8B90A8)
 
-val LuxGreenOutline = Color(0xFF3A5244)
+// Status
+val VaultoError         = Color(0xFFFF5252)
+val VaultoOnError       = Color(0xFFFFFFFF)
+
+// Accent highlights (used in badges, glow, borders)
+val VaultoGlow          = Color(0x33FF5E2B) // Orange glow overlay
+val VaultoGlowGreen     = Color(0x2200F29D) // Green glow overlay
+val VaultoGlassStroke   = Color(0x26FFFFFF) // Glassmorphism border

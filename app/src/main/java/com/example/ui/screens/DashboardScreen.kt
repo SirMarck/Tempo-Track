@@ -253,8 +253,8 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
             StartSessionDialog(
                 clients = clients,
                 onDismiss = { showStartDialog = false },
-                onStart = { clientId, desc ->
-                    viewModel.startSession(clientId, desc)
+                onStart = { clientId, desc, tag ->
+                    viewModel.startSession(clientId, desc, tag)
                     showStartDialog = false
                 }
             )
@@ -264,15 +264,15 @@ fun DashboardScreen(viewModel: TimeTrackerViewModel) {
             ManualSessionDialog(
                 clients = clients,
                 onDismiss = { showManualDialog = false },
-                onSave = { clientId, start, end, desc, discountVal, discountPct ->
-                    viewModel.addManualSession(clientId, start, end, desc, discountVal, discountPct)
+                onSave = { clientId, start, end, desc, discountVal, discountPct, tag ->
+                    viewModel.addManualSession(clientId, start, end, desc, discountVal, discountPct, tag)
                     showManualDialog = false
                 }
             )
         }
 
         if (showSettingsDialog) {
-            CompanySettingsDialog(onDismiss = { showSettingsDialog = false })
+            CompanySettingsDialog(onDismiss = { showSettingsDialog = false }, viewModel = viewModel)
         }
 
         if (showAboutDialog) {
@@ -704,11 +704,12 @@ fun SessionItem(session: Session, client: Client?, onLongClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartSessionDialog(
     clients: List<Client>,
     onDismiss: () -> Unit,
-    onStart: (Long, String) -> Unit
+    onStart: (Long, String, String) -> Unit
 ) {
     if (clients.isEmpty()) {
         AlertDialog(
@@ -720,36 +721,80 @@ fun StartSessionDialog(
         return
     }
 
+    val tags = listOf("#Dev", "#Reunião", "#Design", "#Suporte", "#Consultoria", "#Outro")
+
     var selectedClientId by remember { mutableStateOf(clients.first().id) }
     var description by remember { mutableStateOf("") }
-    
-    // In a real app we'd use a Dropdown or similar. For simplicity, just next/prev or a simple list.
-    // Let's use a very simple setup.
+    var selectedTag by remember { mutableStateOf("") }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Iniciar Trabalho") },
+        title = { Text("Iniciar Trabalho", fontWeight = FontWeight.Bold) },
         text = {
-            Column {
-                Text("Selecione o Cliente:")
-                clients.forEach { client ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = client.id == selectedClientId,
-                            onClick = { selectedClientId = client.id }
-                        )
-                        Text(client.name)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Selecione o Cliente:", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                // Scrollable client list — won't overflow with many clients
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 180.dp)
+                ) {
+                    items(clients) { client ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedClientId = client.id }
+                                .padding(vertical = 2.dp)
+                        ) {
+                            RadioButton(
+                                selected = client.id == selectedClientId,
+                                onClick = { selectedClientId = client.id }
+                            )
+                            Text(
+                                client.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+
+                // Tag chips
+                Text("Categoria:", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    tags.forEach { tag ->
+                        FilterChip(
+                            selected = selectedTag == tag,
+                            onClick = { selectedTag = if (selectedTag == tag) "" else tag },
+                            label = { Text(tag, style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
+
+                // Description
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Descrição do Serviço") }
+                    label = { Text("Descrição do Serviço") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
                 )
             }
         },
         confirmButton = {
-            Button(onClick = { onStart(selectedClientId, description) }) {
+            Button(onClick = { onStart(selectedClientId, description, selectedTag) }) {
                 Text("Iniciar")
             }
         },
@@ -759,11 +804,12 @@ fun StartSessionDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManualSessionDialog(
     clients: List<Client>,
     onDismiss: () -> Unit,
-    onSave: (Long, Long, Long, String, Double, Double) -> Unit
+    onSave: (Long, Long, Long, String, Double, Double, String) -> Unit
 ) {
     if (clients.isEmpty()) {
         AlertDialog(
@@ -775,11 +821,14 @@ fun ManualSessionDialog(
         return
     }
 
+    val tags = listOf("#Dev", "#Reunião", "#Design", "#Suporte", "#Consultoria", "#Outro")
+
     val context = LocalContext.current
     var selectedClientId by remember { mutableStateOf(clients.first().id) }
     var description by remember { mutableStateOf("") }
     var discountValInput by remember { mutableStateOf("") }
     var discountPctInput by remember { mutableStateOf("") }
+    var selectedTag by remember { mutableStateOf("") }
 
     // Start/End date-time management
     val startCalendar = remember { 
@@ -961,6 +1010,23 @@ fun ManualSessionDialog(
 
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
+                    Text("Categoria:", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        tags.forEach { tag ->
+                            FilterChip(
+                                selected = selectedTag == tag,
+                                onClick = { selectedTag = if (selectedTag == tag) "" else tag },
+                                label = { Text(tag, style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
+                }
+
+                item {
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
@@ -1001,7 +1067,8 @@ fun ManualSessionDialog(
                         endTimeMillis,
                         description,
                         discountVal,
-                        discountPct
+                        discountPct,
+                        selectedTag
                     )
                 }
             ) {

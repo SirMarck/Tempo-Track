@@ -43,7 +43,7 @@ class TimeTrackerViewModel(
         }
     }
 
-    fun startSession(clientId: Long, description: String) {
+    fun startSession(clientId: Long, description: String, tag: String = "") {
         viewModelScope.launch {
             // First check if there's any active session, shouldn't start 2
             if (activeSession.value == null) {
@@ -51,7 +51,8 @@ class TimeTrackerViewModel(
                     Session(
                         clientId = clientId,
                         startTime = System.currentTimeMillis(),
-                        description = description
+                        description = description,
+                        tag = tag
                     )
                 )
             }
@@ -139,7 +140,8 @@ class TimeTrackerViewModel(
         endTime: Long,
         description: String,
         discountValue: Double = 0.0,
-        discountPercentage: Double = 0.0
+        discountPercentage: Double = 0.0,
+        tag: String = ""
     ) {
         viewModelScope.launch {
             repository.insertSession(
@@ -149,7 +151,8 @@ class TimeTrackerViewModel(
                     endTime = endTime,
                     description = description,
                     discountValue = discountValue,
-                    discountPercentage = discountPercentage
+                    discountPercentage = discountPercentage,
+                    tag = tag
                 )
             )
         }
@@ -181,6 +184,60 @@ class TimeTrackerViewModel(
 
     fun clearGeminiAnalysis() {
         _geminiAnalysisState.value = GeminiAnalysisState.Idle
+    }
+
+    fun parseQuickSessionWithGemini(
+        text: String,
+        onResult: (com.example.data.gemini.ParsedQuickSession?, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            val available = clients.value
+            val result = geminiRepository.parseSessionFromNaturalText(text, available)
+            result.onSuccess { parsed ->
+                onResult(parsed, null)
+            }.onFailure { error ->
+                onResult(null, error.localizedMessage ?: "Erro ao processar frase com Gemini.")
+            }
+        }
+    }
+
+    /**
+     * Gera um arquivo JSON de backup e o compartilha via sharesheet do Android.
+     * @param context contexto necessário para criar o arquivo e abrir o chooser
+     */
+    fun exportAndShareBackup(context: android.content.Context) {
+        viewModelScope.launch {
+            val file = com.example.utils.BackupManager.exportBackup(
+                context = context,
+                clients = clients.value,
+                sessions = sessions.value
+            )
+            if (file != null) {
+                com.example.utils.BackupManager.shareBackup(context, file)
+            }
+        }
+    }
+
+    /**
+     * Lê o JSON de um URI (arquivo escolhido pelo usuário) e restaura dados.
+     * @param context contexto para ler o arquivo
+     * @param uri URI retornado pelo ActivityResultLauncher do FILE_OPEN picker
+     * @param onComplete callback com o resultado do restore (sucesso ou erro)
+     */
+    fun restoreBackup(
+        context: android.content.Context,
+        uri: android.net.Uri,
+        onComplete: (com.example.utils.BackupResult) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val jsonString = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText()
+                    ?: return@launch onComplete(com.example.utils.BackupResult.Error("Não foi possível ler o arquivo."))
+                com.example.utils.BackupManager.parseAndRestore(context, jsonString, repository, onComplete)
+            } catch (e: Exception) {
+                onComplete(com.example.utils.BackupResult.Error("Erro ao abrir o arquivo: ${e.localizedMessage}"))
+            }
+        }
     }
 }
 

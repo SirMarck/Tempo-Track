@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Update
@@ -31,6 +32,7 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var clientToDelete by remember { mutableStateOf<Client?>(null) }
+    var clientToEdit by remember { mutableStateOf<Client?>(null) }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -98,7 +100,11 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
                 items(clients) { client ->
-                    ClientItem(client, onDelete = { clientToDelete = client })
+                    ClientItem(
+                        client = client,
+                        onEdit = { clientToEdit = client },
+                        onDelete = { clientToDelete = client }
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
@@ -142,7 +148,18 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
         }
 
         if (showSettingsDialog) {
-            CompanySettingsDialog(onDismiss = { showSettingsDialog = false })
+            CompanySettingsDialog(onDismiss = { showSettingsDialog = false }, viewModel = viewModel)
+        }
+
+        clientToEdit?.let { client ->
+            EditClientDialog(
+                client = client,
+                onDismiss = { clientToEdit = null },
+                onSave = { newName, newRate ->
+                    viewModel.updateClient(client.copy(name = newName, hourlyRate = newRate))
+                    clientToEdit = null
+                }
+            )
         }
 
         if (showAboutDialog) {
@@ -152,26 +169,47 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
 }
 
 @Composable
-fun ClientItem(client: Client, onDelete: () -> Unit) {
+fun ClientItem(client: Client, onEdit: () -> Unit, onDelete: () -> Unit) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .luxBorder(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            .luxBorder(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            Column {
-                Text(client.name, style = MaterialTheme.typography.titleMedium)
-                Text("Valor/hora: ${FormatUtils.formatCurrency(client.hourlyRate)}", style = MaterialTheme.typography.bodyMedium)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    client.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                )
+                Text(
+                    "Valor/hora: ${FormatUtils.formatCurrency(client.hourlyRate)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Remover Cliente", tint = MaterialTheme.colorScheme.error)
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Editar Cliente",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remover Cliente",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
@@ -208,6 +246,53 @@ fun AddClientDialog(onDismiss: () -> Unit, onAdd: (String, Double) -> Unit) {
                 onClick = {
                     val rate = rateStr.replace(",", ".").toDoubleOrNull() ?: 0.0
                     if (name.isNotBlank()) onAdd(name, rate)
+                }
+            ) {
+                Text("Salvar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
+}
+
+@Composable
+fun EditClientDialog(
+    client: Client,
+    onDismiss: () -> Unit,
+    onSave: (String, Double) -> Unit
+) {
+    var name by remember { mutableStateOf(client.name) }
+    var rateStr by remember { mutableStateOf(client.hourlyRate.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Cliente") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nome do Cliente") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = rateStr,
+                    onValueChange = { rateStr = it },
+                    label = { Text("Valor por Hora (R\$)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val rate = rateStr.replace(",", ".").toDoubleOrNull() ?: client.hourlyRate
+                    if (name.isNotBlank()) onSave(name, rate)
                 }
             ) {
                 Text("Salvar")

@@ -28,5 +28,6 @@ data class Session(
     val pausedDuration: Long = 0L,
     val pauseEvents: String = "",
     val discountValue: Double = 0.0,
-    val discountPercentage: Double = 0.0
+    val discountPercentage: Double = 0.0,
+    val tag: String = ""
 )
