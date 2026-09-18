@@ -32,6 +32,7 @@ jobs:
     - name: Preparar Environment e Keystore
       run: |
         cp .env.example .env
+        cp .env.example secrets.properties || true
         if [ -f debug.keystore.base64 ]; then
           base64 -d debug.keystore.base64 > debug.keystore
         else
