@@ -13,6 +13,10 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class BackupResult {
     data class Success(
@@ -176,14 +180,14 @@ object BackupManager {
                 )
             }
 
-            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 for (client in parsedClients) {
                     repository.insertClient(client)
                 }
                 for (session in parsedSessions) {
                     repository.insertSession(session)
                 }
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     onComplete(
                         BackupResult.Success(
                             clientCount = parsedClients.size,
