@@ -5,6 +5,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import com.example.data.Client
+import com.example.data.Project
 
 object FormatUtils {
     fun formatCurrency(value: Double): String {
@@ -48,6 +50,10 @@ object FormatUtils {
         return projectRate?.takeIf { it > 0.0 }
             ?: clientRate.takeIf { it > 0.0 }
             ?: globalRate
+    }
+
+    fun resolveEffectiveRate(project: Project?, client: Client?, globalRate: Double = 0.0): Double {
+        return resolveEffectiveRate(project?.hourlyRate, client?.hourlyRate ?: 0.0, globalRate)
     }
 }
 

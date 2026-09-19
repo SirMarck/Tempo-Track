@@ -22,6 +22,7 @@ import com.example.viewmodel.TimeTrackerViewModel
 import kotlinx.coroutines.launch
 
 import com.example.ui.theme.luxBorder
+import com.example.ui.theme.tempoMaterialHighlight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -215,7 +216,7 @@ fun ClientItem(client: Client, onEdit: () -> Unit, onDelete: () -> Unit) {
 }
 
 @Composable
-fun AddClientDialog(onDismiss: () -> Unit, onAdd: (String, Double) -> Unit) {
+private fun AddClientDialog(onDismiss: () -> Unit, onAdd: (String, Double) -> Unit) {
     var name by remember { mutableStateOf("") }
     var rateStr by remember { mutableStateOf("") }
 

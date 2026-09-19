@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 
 import com.example.ui.theme.luxBorder
+import com.example.ui.theme.tempoMaterialHighlight
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
