@@ -40,10 +40,13 @@ object BackupManager {
             val sharedPrefs = context.getSharedPreferences("time_tracker_prefs", Context.MODE_PRIVATE)
             val compName = sharedPrefs.getString("company_name", "") ?: ""
             val compCnpj = sharedPrefs.getString("company_cnpj", "") ?: ""
+            val compPhone = sharedPrefs.getString("company_phone", "") ?: ""
+            val compEmail = sharedPrefs.getString("company_email", "") ?: ""
+            val compPix = sharedPrefs.getString("company_pix", "") ?: ""
             val closingDay = sharedPrefs.getInt("closing_day", 1)
 
             val root = JSONObject()
-            root.put("version", 1)
+            root.put("version", 2)
             root.put("app", "TempoTrack")
             root.put("exportDate", System.currentTimeMillis())
             root.put("exportDateFormatted", SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date()))
@@ -51,6 +54,9 @@ object BackupManager {
             val companyObj = JSONObject().apply {
                 put("name", compName)
                 put("cnpj", compCnpj)
+                put("phone", compPhone)
+                put("email", compEmail)
+                put("pix", compPix)
                 put("closingDay", closingDay)
             }
             root.put("company", companyObj)
@@ -61,6 +67,11 @@ object BackupManager {
                     put("id", c.id)
                     put("name", c.name)
                     put("hourlyRate", c.hourlyRate)
+                    put("currency", c.currency)
+                    put("notes", c.notes ?: JSONObject.NULL)
+                    put("archivedAt", c.archivedAt ?: JSONObject.NULL)
+                    put("createdAt", c.createdAt)
+                    put("updatedAt", c.updatedAt)
                 }
                 clientsArr.put(cObj)
             }
@@ -81,6 +92,14 @@ object BackupManager {
                     put("discountValue", s.discountValue)
                     put("discountPercentage", s.discountPercentage)
                     put("tag", s.tag)
+                    put("projectId", if (s.projectId != null) s.projectId else JSONObject.NULL)
+                    put("activityId", if (s.activityId != null) s.activityId else JSONObject.NULL)
+                    put("billable", s.billable)
+                    put("appliedRate", s.appliedRate)
+                    put("status", s.status)
+                    put("source", s.source)
+                    put("financialStatus", s.financialStatus)
+                    put("closingBatchId", if (s.closingBatchId != null) s.closingBatchId else JSONObject.NULL)
                 }
                 sessionsArr.put(sObj)
             }
@@ -131,25 +150,40 @@ object BackupManager {
             val companyObj = root.optJSONObject("company")
             val compName = companyObj?.optString("name", "") ?: ""
             val compCnpj = companyObj?.optString("cnpj", "") ?: ""
+            val compPhone = companyObj?.optString("phone", "") ?: ""
+            val compEmail = companyObj?.optString("email", "") ?: ""
+            val compPix = companyObj?.optString("pix", "") ?: ""
             val closingDay = companyObj?.optInt("closingDay", 1) ?: 1
 
             val sharedPrefs = context.getSharedPreferences("time_tracker_prefs", Context.MODE_PRIVATE)
             sharedPrefs.edit()
                 .putString("company_name", compName)
                 .putString("company_cnpj", compCnpj)
+                .putString("company_phone", compPhone)
+                .putString("company_email", compEmail)
+                .putString("company_pix", compPix)
                 .putInt("closing_day", closingDay)
                 .apply()
 
             // Restore Clients
             val clientsArr = root.getJSONArray("clients")
             val parsedClients = mutableListOf<Client>()
+            val clientRateMap = mutableMapOf<Long, Double>()
             for (i in 0 until clientsArr.length()) {
                 val cObj = clientsArr.getJSONObject(i)
+                val clientId = cObj.optLong("id", 0)
+                val hourlyRate = cObj.getDouble("hourlyRate")
+                clientRateMap[clientId] = hourlyRate
                 parsedClients.add(
                     Client(
-                        id = cObj.optLong("id", 0),
+                        id = clientId,
                         name = cObj.getString("name"),
-                        hourlyRate = cObj.getDouble("hourlyRate")
+                        hourlyRate = hourlyRate,
+                        currency = cObj.optString("currency", "BRL"),
+                        notes = if (cObj.isNull("notes")) null else cObj.optString("notes"),
+                        archivedAt = if (cObj.isNull("archivedAt")) null else cObj.optLong("archivedAt"),
+                        createdAt = cObj.optLong("createdAt", System.currentTimeMillis()),
+                        updatedAt = cObj.optLong("updatedAt", System.currentTimeMillis())
                     )
                 )
             }
@@ -159,13 +193,28 @@ object BackupManager {
             val parsedSessions = mutableListOf<Session>()
             for (i in 0 until sessionsArr.length()) {
                 val sObj = sessionsArr.getJSONObject(i)
+                val clientId = sObj.getLong("clientId")
                 val endTime = if (sObj.isNull("endTime")) null else sObj.getLong("endTime")
                 val lastPaused = if (sObj.isNull("lastPausedTime")) null else sObj.getLong("lastPausedTime")
+
+                // Preserva appliedRate ou faz snapshot a partir da taxa do cliente
+                val rate = if (sObj.has("appliedRate") && !sObj.isNull("appliedRate")) {
+                    sObj.getDouble("appliedRate")
+                } else {
+                    clientRateMap[clientId] ?: 0.0
+                }
+
+                val status = sObj.optString("status", if (endTime != null) "completed" else "running")
+                val billable = sObj.optBoolean("billable", true)
+                val financialStatus = sObj.optString("financialStatus", "unbilled")
+                val projectId = if (sObj.has("projectId") && !sObj.isNull("projectId")) sObj.getLong("projectId") else null
+                val activityId = if (sObj.has("activityId") && !sObj.isNull("activityId")) sObj.getLong("activityId") else null
+                val closingBatchId = if (sObj.has("closingBatchId") && !sObj.isNull("closingBatchId")) sObj.getLong("closingBatchId") else null
 
                 parsedSessions.add(
                     Session(
                         id = sObj.optLong("id", 0),
-                        clientId = sObj.getLong("clientId"),
+                        clientId = clientId,
                         startTime = sObj.getLong("startTime"),
                         endTime = endTime,
                         description = sObj.optString("description", ""),
@@ -175,7 +224,15 @@ object BackupManager {
                         pauseEvents = sObj.optString("pauseEvents", ""),
                         discountValue = sObj.optDouble("discountValue", 0.0),
                         discountPercentage = sObj.optDouble("discountPercentage", 0.0),
-                        tag = sObj.optString("tag", "")
+                        tag = sObj.optString("tag", ""),
+                        projectId = projectId,
+                        activityId = activityId,
+                        billable = billable,
+                        appliedRate = rate,
+                        status = status,
+                        source = sObj.optString("source", "timer"),
+                        financialStatus = financialStatus,
+                        closingBatchId = closingBatchId
                     )
                 )
             }

@@ -651,17 +651,16 @@ fun PauseIcon(color: androidx.compose.ui.graphics.Color) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SessionItem(session: Session, client: Client?, onLongClick: () -> Unit) {
-    OutlinedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = {},
                 onLongClick = onLongClick
             )
-            .luxBorder(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+            .tempoMaterialHighlight(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

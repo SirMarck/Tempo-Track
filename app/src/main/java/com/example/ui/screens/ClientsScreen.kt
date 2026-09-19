@@ -170,13 +170,12 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
 
 @Composable
 fun ClientItem(client: Client, onEdit: () -> Unit, onDelete: () -> Unit) {
-    OutlinedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .luxBorder(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+            .tempoMaterialHighlight(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),

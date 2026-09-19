@@ -3,598 +3,2800 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TempoTrack — Vaulto Preview</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>TempoTrack v2 — Simulador Oficial (Tech Sóbrio & Efeitos Fiéis)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- GSAP for Smooth Morph Transitions -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
   <style>
     :root {
-      --bg: #0C0D10;
-      --surface: rgba(255,255,255,0.03);
-      --surface-hover: rgba(255,255,255,0.055);
-      --glass: rgba(255,255,255,0.04);
-      --glass-border: rgba(255,255,255,0.06);
-      --glass-border-hover: rgba(255,255,255,0.10);
-      --primary: #E8502A;
-      --primary-soft: rgba(232,80,42,0.12);
-      --primary-glow: rgba(232,80,42,0.06);
-      --green: #00E88F;
-      --green-soft: rgba(0,232,143,0.10);
-      --green-glow: rgba(0,232,143,0.05);
-      --text: #E4E5EA;
-      --text-secondary: #8A8D9B;
-      --text-tertiary: #565966;
-      --error: #E85454;
-      --error-soft: rgba(232,84,84,0.12);
-      --radius: 16px;
-      --radius-sm: 10px;
-      --radius-xs: 6px;
+      --bg: #15181D; /* Cinza grafite / chumbo autêntico do pôster */
+      --bg-surface: #171B21;
+      --phone-bg: #16191F;
+      --surface-1: #1C2027;
+      --surface-2: #20252D;
+      --surface-3: #262B34;
+      --accent: #E45A25;
+      --accent-bright: #FF6B35;
+      --accent-glow: rgba(255, 107, 53, 0.28);
+      --accent-soft: rgba(228, 90, 37, 0.10);
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --blue: #3B82F6;
+      --teal: #14B8A6;
+      --purple: #A855F7;
+      --text: #F8FAFC;
+      --text-muted: #8E9BAE;
+      --text-dim: #606E82;
+      --radius-sm: 14px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+      --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; border: none; }
+    
+    /* Authentic Poster Cosmic Atmosphere with Slate Gray Foundation */
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg); color: var(--text);
-      min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 32px; -webkit-font-smoothing: antialiased;
+      font-family: var(--font);
+      background: #121519 url('../TempoTrack_Guia_Redesign_Antigravity_v2.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Ambient light — very subtle */
+    /* Ambient slate-graphite nebula overlay (cinza profundo suave, não preto) */
     body::before {
-      content:''; position:fixed; top:-10%; left:50%; transform:translateX(-50%);
-      width:600px; height:500px; border-radius:50%;
-      background: radial-gradient(ellipse, var(--primary-glow) 0%, transparent 70%);
-      pointer-events:none; z-index:0;
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(20, 24, 30, 0.72) 0%, rgba(15, 18, 23, 0.88) 80%);
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .header { z-index:1; text-align:center; margin-bottom:24px; }
-    .header h1 {
-      font-size:22px; font-weight:600; letter-spacing:-0.3px;
-      color: var(--text); margin-bottom:4px;
-    }
-    .header p { font-size:13px; color:var(--text-tertiary); font-weight:400; }
-
-    /* Phone */
-    .phone {
-      z-index:1; width:375px; height:740px; border-radius:40px;
-      border: 0.5px solid var(--glass-border);
-      background: var(--bg); overflow:hidden;
-      display:flex; flex-direction:column; position:relative;
-      box-shadow: 0 40px 80px -20px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.04);
+    /* Top Brand & Screen Selector Bar */
+    .top-header {
+      text-align: center;
+      margin-bottom: 20px;
+      z-index: 10;
+      max-width: 960px;
+      width: 100%;
     }
 
-    .statusbar {
-      display:flex; justify-content:space-between; padding:10px 24px 6px;
-      font-size:11px; font-weight:500; color:var(--text-tertiary);
+    .brand-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+    .brand-title span.orange { color: var(--accent-bright); }
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 400;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
 
-    .topbar {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:4px 20px 14px; 
+    /* 10-Screen Switcher Strip - Sem bordas, delimitado por gradiente e sombra */
+    .screen-strip-container {
+      background: rgba(28, 33, 40, 0.92);
+      backdrop-filter: blur(20px);
+      border-radius: 100px;
+      padding: 6px;
+      margin-top: 14px;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 16px 40px rgba(0, 0, 0, 0.5);
     }
-    .topbar h2 { font-size:17px; font-weight:600; color:var(--text); letter-spacing:-0.2px; }
-    .topbar-icon {
-      width:30px; height:30px; border-radius:8px; display:flex;
-      align-items:center; justify-content:center;
-      background:var(--surface); border:0.5px solid var(--glass-border);
-      color:var(--text-tertiary); font-size:14px; cursor:pointer;
-      transition:all 0.2s;
-    }
-    .topbar-icon:hover { background:var(--surface-hover); color:var(--text-secondary); }
+    .screen-strip-container::-webkit-scrollbar { display: none; }
 
-    .content {
-      flex:1; overflow-y:auto; padding:0 16px 16px;
-      scrollbar-width:none;
+    .strip-btn {
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 7px 15px;
+      border-radius: 100px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
-    .content::-webkit-scrollbar { display:none; }
+    .strip-btn:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.06);
+    }
+    .strip-btn.active {
+      background: linear-gradient(135deg, var(--accent-bright) 0%, var(--accent) 100%);
+      color: #FFF;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 16px var(--accent-glow);
+    }
 
-    /* Glass card */
-    .glass {
-      background: var(--glass);
-      border: 0.5px solid var(--glass-border);
-      border-radius: var(--radius);
+    /* Phone Device Mockup with Matte Slate Titanium - Fundo Cinza Autêntico */
+    .phone-wrapper {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      border-radius: 52px;
+      background: #171A1F; /* Cinza chumbo/grafite idêntico ao pôster */
+      box-shadow: 
+        0 50px 120px -20px rgba(0, 0, 0, 0.95),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 60px rgba(228, 90, 37, 0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      z-index: 5;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      z-index: 100;
+    }
+    .status-icons { display: flex; gap: 6px; font-size: 11px; }
+
+    /* Screen Viewport - Fundo Cinza Contínuo */
+    .screen-viewport {
+      flex: 1;
+      position: relative;
+      background: #171A1F;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+    }
+    .screen-viewport::-webkit-scrollbar { display: none; }
+
+    .app-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      padding: 0 18px 24px;
+      transform-origin: center center;
+      background: transparent;
+    }
+    .app-screen.active {
+      display: flex;
+    }
+
+    /* Bottom Navigation Bar - Sem borda, delimitada por gradiente e sombra */
+    .bottom-nav {
+      height: 68px;
+      background: linear-gradient(180deg, rgba(28, 33, 40, 0.98) 0%, rgba(20, 24, 29, 0.99) 100%);
+      backdrop-filter: blur(20px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 -8px 24px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px 6px;
+      z-index: 90;
+    }
+    .nav-tab {
+      background: transparent;
+      color: var(--text-dim);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .nav-tab svg { width: 20px; height: 20px; fill: currentColor; }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active {
+      color: var(--accent-bright);
+    }
+
+    /* Common Card Styles - SEM BORDAS: Apenas Gradientes Sutis e Reflexos Mínimos de Luz */
+    .card {
+      background: linear-gradient(180deg, #1C2027 0%, #171A21 100%);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 3px 10px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Badges */
+    .badge-square {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      color: #FFF;
+      flex-shrink: 0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+    .badge-blue { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); }
+    .badge-teal { background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%); }
+    .badge-orange { background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%); }
+    .badge-purple { background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); }
+    .badge-pink { background: linear-gradient(135deg, #DB2777 0%, #BE185D 100%); }
+
+    /* Orange Glowing Button - Sem bordas, sombra sutil e luz quente elegante */
+    .btn-glow {
+      background: linear-gradient(135deg, var(--accent-bright) 0%, var(--accent) 100%);
+      color: #FFF;
+      font-weight: 700;
+      border-radius: 100px;
+      padding: 14px 20px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 14px rgba(228, 90, 37, 0.32);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+    }
+    .btn-glow:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 18px rgba(255, 107, 53, 0.42);
+    }
+    .btn-dark {
+      background: linear-gradient(180deg, #20252D 0%, #191C23 100%);
+      color: var(--text);
+      font-weight: 600;
+      border-radius: 100px;
+      padding: 12px 18px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.18);
+      transition: all 0.15s;
+    }
+    .btn-dark:hover {
+      background: linear-gradient(180deg, #242932 0%, #1C2027 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 10px rgba(0, 0, 0, 0.22);
+    }
+
+    /* Quick Action Pill - Sem bordas, integrado ao fundo com luz mínima */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .action-pill {
+      flex: 1;
+      background: linear-gradient(180deg, #1C2027 0%, #161A20 100%);
+      color: var(--accent-bright);
+      padding: 12px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.16);
+      transition: all 0.2s;
+    }
+    .action-pill:hover {
+      background: linear-gradient(180deg, #20252D 0%, #191D24 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 3px 10px rgba(0, 0, 0, 0.22);
+      transform: translateY(-1px);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       TELA 1: HOJE / DASHBOARD
+       ══════════════════════════════════════════════════════ */
+    .today-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FF6B35 0%, #3B82F6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 0 10px rgba(228, 90, 37, 0.25);
+      cursor: pointer;
+    }
+    .menu-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #20252D 0%, #181B21 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+    .menu-icon span { width: 16px; height: 2px; background: var(--text-muted); border-radius: 1px; }
+
+    .stats-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .stat-box {
+      background: linear-gradient(180deg, #1C2027 0%, #171A21 100%);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 3px 10px rgba(0, 0, 0, 0.18);
+    }
+    .stat-number {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: var(--mono);
+      margin-bottom: 2px;
+    }
+    .stat-number.orange { color: var(--accent-bright); }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Active Timer Card: SEM BORDA, delimitado por gradiente e reflexo sutil */
+    .active-timer-card {
+      background: linear-gradient(180deg, #1E232B 0%, #171A21 100%);
+      border-radius: var(--radius-md);
       padding: 18px;
-      margin-bottom: 10px;
-      transition: border-color 0.3s, background 0.3s;
+      margin-bottom: 14px;
+      position: relative;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 14px rgba(0, 0, 0, 0.22);
+      transform-origin: center center;
     }
-    .glass:hover { border-color: var(--glass-border-hover); background: var(--surface-hover); }
-    .glass-active {
-      background: var(--green-soft);
-      border-color: rgba(0,232,143,0.15);
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-bright);
+      box-shadow: 0 0 8px var(--accent-bright);
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
     }
-
-    .label {
-      font-size:11px; font-weight:500; color:var(--text-tertiary);
-      letter-spacing:0.6px; text-transform:uppercase; margin-bottom:8px;
-    }
-    .label-inline { display:flex; align-items:center; gap:6px; }
-
-    /* Timer */
-    .timer {
-      font-family:'JetBrains Mono', monospace;
-      font-size:38px; font-weight:500; color:var(--green);
-      text-align:center; letter-spacing:1px;
-      margin:8px 0 6px;
-    }
-    @keyframes breathe { 0%,100%{opacity:0.9} 50%{opacity:0.4} }
-    .live-dot {
-      width:6px; height:6px; border-radius:50%; background:var(--green);
-      display:inline-block; margin-right:6px;
-      animation: breathe 2s ease-in-out infinite;
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
     }
 
-    .timer-meta {
-      text-align:center; font-size:13px; color:var(--text-secondary); font-weight:400;
-    }
-    .timer-meta strong { color:var(--text); font-weight:500; }
-
-    .timer-actions {
-      display:flex; gap:8px; margin-top:14px;
-    }
-
-    /* Buttons */
-    .btn {
-      flex:1; padding:10px 0; border-radius:var(--radius-sm); font-size:13px;
-      font-weight:500; cursor:pointer; transition:all 0.2s; border:none;
-      letter-spacing:-0.1px;
-    }
-    .btn-ghost {
-      background:rgba(255,255,255,0.05); color:var(--text-secondary);
-      border:0.5px solid var(--glass-border);
-    }
-    .btn-ghost:hover { background:rgba(255,255,255,0.08); color:var(--text); }
-    .btn-primary {
-      background:var(--primary); color:#fff;
-    }
-    .btn-primary:hover { opacity:0.85; }
-    .btn-danger {
-      background:var(--error-soft); color:var(--error);
+    .timer-big-digits {
+      font-family: var(--mono);
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #FFF;
+      margin: 8px 0 4px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
     }
 
-    /* Value displays */
-    .value {
-      font-family:'JetBrains Mono',monospace;
-      font-size:24px; font-weight:600; color:var(--green);
-      letter-spacing:-0.5px;
-    }
-    .value-sm { font-size:18px; }
-    .value-orange { color:var(--primary); }
-    .sub { font-size:12px; color:var(--text-tertiary); margin-top:3px; font-weight:400; }
-
-    /* Session row */
-    .row {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:13px 14px; background:var(--glass); border:0.5px solid var(--glass-border);
-      border-radius:var(--radius-sm); margin-bottom:6px; transition:all 0.2s;
-    }
-    .row:hover { background:var(--surface-hover); border-color:var(--glass-border-hover); }
-    .row-name { font-size:14px; font-weight:500; color:var(--text); }
-    .row-meta { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
-    .row-value {
-      font-family:'JetBrains Mono',monospace; font-size:13px;
-      font-weight:500; color:var(--green); white-space:nowrap;
-    }
-    .tag {
-      display:inline-block; font-size:9px; font-weight:600; color:var(--primary);
-      background:var(--primary-soft); padding:2px 6px; border-radius:4px;
-      margin-top:3px; letter-spacing:0.3px;
+    /* ══════════════════════════════════════════════════════
+       TELA 3: O RELÓGIO ATIVO 3D (REPLICAÇÃO FIEL AO PÔSTER)
+       ══════════════════════════════════════════════════════ */
+    .clock-3d-stage {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      margin: 6px 0 14px;
+      overflow: visible;
     }
 
-    /* Client card */
-    .client-row {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:14px 16px; background:var(--glass); border:0.5px solid var(--glass-border);
-      border-radius:var(--radius-sm); margin-bottom:6px; transition:all 0.2s;
+    /* Diagonal cosmic light beam behind the ring */
+    .diagonal-beam {
+      position: absolute;
+      width: 420px;
+      height: 120px;
+      background: radial-gradient(ellipse at center, rgba(255, 107, 53, 0.28) 0%, rgba(255, 107, 53, 0.08) 45%, transparent 75%);
+      transform: rotate(-35deg);
+      filter: blur(16px);
+      pointer-events: none;
+      z-index: 1;
     }
-    .client-row:hover { background:var(--surface-hover); }
-    .client-name { font-size:14px; font-weight:500; color:var(--text); }
-    .client-rate { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
-    .icon-btn {
-      width:30px; height:30px; border-radius:7px; border:none;
-      background:transparent; color:var(--text-tertiary); cursor:pointer;
-      display:flex; align-items:center; justify-content:center; font-size:13px;
-      transition:all 0.15s;
-    }
-    .icon-btn:hover { background:rgba(255,255,255,0.06); }
-    .icon-btn.edit:hover { color:var(--primary); }
-    .icon-btn.del:hover { color:var(--error); }
 
-    /* Filter chips */
-    .filters { display:flex; gap:6px; justify-content:center; margin-bottom:14px; }
-    .fchip {
-      padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500;
-      color:var(--text-tertiary); background:var(--glass); border:0.5px solid var(--glass-border);
-      cursor:pointer; transition:all 0.2s;
+    /* The angled 3D Torus Container matching media_1789841983545.png */
+    .torus-isometric-box {
+      position: relative;
+      width: 290px;
+      height: 290px;
+      transform-style: preserve-3d;
+      transform: rotateX(54deg) rotateZ(-38deg) rotateY(8deg);
+      transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 2;
     }
-    .fchip.on { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .torus-isometric-box.paused {
+      transform: rotateX(20deg) rotateZ(0deg) rotateY(0deg);
+    }
 
-    /* Tag chips */
-    .chips { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0 4px; }
-    .chip {
-      padding:4px 10px; border-radius:14px; font-size:10px; font-weight:500;
-      color:var(--text-tertiary); background:rgba(255,255,255,0.03);
-      border:0.5px solid var(--glass-border); cursor:pointer; transition:all 0.15s;
+    /* Canvas that draws the segmented crystal facets and glowing neon plasma arcs */
+    #clockCanvas {
+      position: absolute;
+      inset: -20px;
+      width: 330px;
+      height: 330px;
+      pointer-events: none;
+      z-index: 3;
     }
-    .chip.on { color:var(--primary); background:var(--primary-soft); border-color:rgba(232,80,42,0.25); }
 
-    /* Date nav */
-    .datenav {
-      display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;
+    /* Central sunken plate */
+    .sunken-dial {
+      position: absolute;
+      inset: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #10141A 0%, #090C10 75%, #1A212A 100%);
+      box-shadow: inset 0 6px 20px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
     }
-    .datenav-btn {
-      background:none; border:none; color:var(--text-tertiary); font-size:12px;
-      font-weight:500; cursor:pointer; transition:color 0.15s;
-    }
-    .datenav-btn:hover { color:var(--primary); }
-    .datenav-label { font-size:14px; font-weight:600; color:var(--text); }
 
-    /* Gemini card */
-    .gemini {
-      background: linear-gradient(135deg, rgba(232,80,42,0.06) 0%, var(--glass) 100%);
-      border: 0.5px solid rgba(232,80,42,0.12);
-      border-radius:var(--radius); padding:14px; margin-bottom:10px;
-      cursor:pointer; transition:all 0.25s;
+    /* Counter-rotated center text for pristine legibility */
+    .clock-center-digits {
+      transform: rotateZ(38deg) rotateX(-54deg);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
     }
-    .gemini:hover { border-color:rgba(232,80,42,0.25); }
-    .gemini-title { font-size:13px; font-weight:600; color:var(--primary); }
-    .gemini-sub { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+    .clock-time-val {
+      font-family: var(--mono);
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: #FFFFFF;
+      text-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
+    }
+    .clock-earn-val {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-top: 2px;
+      text-shadow: 0 0 12px var(--accent-glow);
+    }
 
-    /* Summary row (reports) */
-    .summary { display:flex; gap:8px; margin-bottom:10px; }
-    .summary .glass { flex:1; text-align:center; }
+    /* Dual Cards below the ring matching PDF Screen 3 - Sem bordas */
+    .dual-cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      z-index: 5;
+    }
+    .sub-metric-card {
+      background: linear-gradient(180deg, #1C2027 0%, #171A21 100%);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 3px 10px rgba(0, 0, 0, 0.18);
+    }
+    .sub-metric-lbl {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sub-metric-val {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      margin-top: 2px;
+    }
 
-    /* FAB */
-    .fab {
-      position:absolute; bottom:64px; right:16px;
-      width:48px; height:48px; border-radius:14px;
-      background:var(--primary); color:#fff; border:none;
-      font-size:22px; font-weight:300; cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 8px 24px -4px rgba(232,80,42,0.3);
-      transition:all 0.2s;
+    /* Dots indicator • • • */
+    .dots-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 16px;
     }
-    .fab:hover { transform:translateY(-2px); box-shadow:0 12px 32px -4px rgba(232,80,42,0.4); }
+    .dot-item {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      opacity: 0.5;
+    }
+    .dot-item.active {
+      background: var(--text);
+      opacity: 1;
+      width: 16px;
+      border-radius: 10px;
+    }
 
-    /* Bottom nav */
-    .nav {
-      display:flex; background:rgba(12,13,16,0.95); backdrop-filter:blur(20px);
-      border-top:0.5px solid var(--glass-border);
+    /* Controls Bar matching Screen 3 of PDF */
+    .clock-controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
     }
-    .nav-item {
-      flex:1; display:flex; flex-direction:column; align-items:center;
-      padding:8px 0 6px; gap:2px; background:none; border:none;
-      color:var(--text-tertiary); font-size:10px; font-weight:500;
-      cursor:pointer; transition:color 0.2s;
+    .btn-sleep-pause {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
     }
-    .nav-item .ni { font-size:18px; }
-    .nav-item.on { color:var(--primary); }
+    .btn-sleep-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #28303B 0%, #1D232B 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
 
-    /* Modal */
-    .overlay {
-      position:absolute; inset:0; background:rgba(0,0,0,0.65);
-      backdrop-filter:blur(8px); display:none;
-      align-items:center; justify-content:center; z-index:10;
+    /* Circular bronze pause button - Sem bordas, pura profundidade radial */
+    .btn-bronze-pause {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #4C2E20 0%, #291A11 75%, #180F0A 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 140, 80, 0.6), 0 8px 24px rgba(0,0,0,0.7), 0 0 24px rgba(228, 90, 37, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #FFF;
+      font-size: 18px;
+      font-weight: 800;
+      transition: all 0.2s;
     }
-    .overlay.show { display:flex; }
-    .modal {
-      background: #141518; border:0.5px solid var(--glass-border);
-      border-radius:20px; padding:24px; width:88%; max-height:78%;
-      overflow-y:auto; scrollbar-width:none;
+    .btn-bronze-pause:hover {
+      transform: scale(1.05);
+      box-shadow: inset 0 1px 0 rgba(255, 160, 100, 0.8), 0 0 32px var(--accent-glow);
     }
-    .modal::-webkit-scrollbar { display:none; }
-    .modal h3 { font-size:16px; font-weight:600; margin-bottom:16px; letter-spacing:-0.2px; }
-    .modal-input {
-      width:100%; background:rgba(255,255,255,0.03); border:0.5px solid var(--glass-border);
-      border-radius:var(--radius-xs); color:var(--text); padding:10px 12px;
-      font-size:13px; font-family:inherit; outline:none; transition:border-color 0.2s;
-    }
-    .modal-input:focus { border-color:rgba(255,255,255,0.12); }
-    textarea.modal-input { resize:none; height:56px; }
-    .modal-close {
-      margin-top:14px; width:100%; padding:9px; border-radius:var(--radius-sm);
-      border:0.5px solid var(--glass-border); background:transparent;
-      color:var(--text-tertiary); cursor:pointer; font-size:13px; font-weight:500;
-      transition:all 0.15s;
-    }
-    .modal-close:hover { color:var(--text-secondary); border-color:var(--glass-border-hover); }
 
-    /* Radio */
-    .radio-row {
-      display:flex; align-items:center; gap:8px; padding:7px 0;
-      cursor:pointer; font-size:13px; color:var(--text-secondary);
+    /* ══════════════════════════════════════════════════════
+       TELA 6: CLIENTE / DETALHES & RELATÓRIO DO CLIENTE
+       ══════════════════════════════════════════════════════ */
+    .client-avatar-large {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      margin: 10px auto 8px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 10px 30px rgba(59, 130, 246, 0.4);
     }
-    .radio-row input { accent-color:var(--primary); }
-    .radio-row:hover { color:var(--text); }
 
-    /* Backup */
-    .backup-row { display:flex; gap:6px; margin-top:8px; }
-    .backup-btn {
-      flex:1; padding:8px; border-radius:var(--radius-xs);
-      border:0.5px solid var(--glass-border); background:transparent;
-      color:var(--text-tertiary); font-size:11px; font-weight:500;
-      cursor:pointer; transition:all 0.15s;
+    .segmented-control {
+      background: #15181E;
+      border-radius: 100px;
+      padding: 3px;
+      display: flex;
+      margin-bottom: 14px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
     }
-    .backup-btn:hover { color:var(--text-secondary); border-color:var(--glass-border-hover); }
+    .seg-pill {
+      flex: 1;
+      padding: 7px 6px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      background: transparent;
+      color: var(--text-dim);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .seg-pill.active {
+      background: linear-gradient(180deg, #1F242C 0%, #171A21 100%);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
 
-    .sep { height:0.5px; background:var(--glass-border); margin:14px 0; }
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: #191D24;
+      border-radius: 100px;
+      margin-top: 10px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-bright) 100%);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
 
-    .screen { display:none; }
-    .screen.on { display:block; }
+    /* Modal Popup */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(14, 17, 22, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-sheet {
+      width: 100%;
+      background: #171B21;
+      border-radius: 28px 28px 0 0;
+      padding: 22px 20px 32px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 -12px 40px rgba(0,0,0,0.7);
+    }
+    .modal-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .input-field {
+      width: 100%;
+      background: #1C2027;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      outline: none;
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+    .input-field:focus {
+      box-shadow: inset 0 1px 0 rgba(255, 107, 53, 0.3), 0 0 12px var(--accent-soft);
+    }
+
+    /* Period Picker Card & Modern Inputs - Zero Stroke Borders, Slate Grey */
+    .period-picker-card {
+      background: linear-gradient(180deg, #1C2027 0%, #171A21 100%);
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.22);
+    }
+    .date-input {
+      width: 100%;
+      background: #15181E;
+      border: none;
+      border-radius: 12px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--font);
+      outline: none;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.38);
+      color-scheme: dark;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .date-input:focus {
+      box-shadow: inset 0 1px 0 rgba(255, 107, 53, 0.3), 0 0 12px var(--accent-soft);
+    }
+    .date-input::-webkit-calendar-picker-indicator {
+      filter: invert(0.85);
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.15s;
+    }
+    .date-input::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+      filter: invert(1) drop-shadow(0 0 4px var(--accent-bright));
+    }
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 5px 9px;
+      border-radius: 100px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .chip-btn:hover {
+      background: rgba(255, 255, 255, 0.09);
+      color: var(--text);
+    }
+    .chip-btn.active {
+      background: rgba(228, 90, 37, 0.2);
+      color: var(--accent-bright);
+      box-shadow: inset 0 1px 0 rgba(255, 107, 53, 0.35);
+    }
+    .period-badge {
+      background: rgba(228, 90, 37, 0.14);
+      color: var(--accent-bright);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 100px;
+      box-shadow: inset 0 1px 0 rgba(255, 107, 53, 0.25);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       FLUTTER HERO SHARED ELEMENT TRANSITION CONTAINER
+       ══════════════════════════════════════════════════════ */
+    .hero-flight-container {
+      position: absolute;
+      z-index: 600;
+      pointer-events: none;
+      display: none;
+      overflow: hidden;
+      transform-origin: center center;
+      box-sizing: border-box;
+      will-change: transform, width, height, top, left, border-radius;
+    }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>⏱ TempoTrack</h1>
-  <p>Preview Interativo — Vaulto Design</p>
-</div>
+  <!-- Top Header with Screen Switcher -->
+  <header class="top-header">
+    <div class="brand-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="#E45A25" stroke-width="2.5"/>
+        <path d="M12 6V12L16 14" stroke="#FFF" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span>Tempo<span class="orange">Track</span></span>
+      <span style="font-size:11px;background:#241C18;color:#FF6B35;padding:3px 10px;border-radius:100px;margin-left:6px;box-shadow:inset 0 1px 0 rgba(255,107,53,0.4);">REVOLUÇÃO v2</span>
+    </div>
+    <div class="brand-sub">Fidelidade Total ao Pôster Oficial • Animações Morph Líquidas • Relatório do Cliente com PDF</div>
 
-<div class="phone">
-  <div class="statusbar"><span>22:19</span><span style="letter-spacing:2px">• • •</span></div>
-  <div class="topbar">
-    <h2 id="title">Dashboard</h2>
-    <div class="topbar-icon" onclick="openModal('settingsModal')">⚙</div>
-  </div>
+    <!-- 10 Direct Screen Buttons -->
+    <div class="screen-strip-container">
+      <button class="strip-btn active" onclick="morphToScreen(1, this)">1. Hoje</button>
+      <button class="strip-btn" onclick="morphToScreen(2, this)">2. Novo Trabalho</button>
+      <button class="strip-btn" onclick="morphToScreen(3, this)">3. Timer 3D Foco</button>
+      <button class="strip-btn" onclick="morphToScreen(4, this)">4. Histórico</button>
+      <button class="strip-btn" onclick="morphToScreen(5, this)">5. Projetos</button>
+      <button class="strip-btn" onclick="morphToScreen(6, this)">6. Cliente & Relatório</button>
+      <button class="strip-btn" onclick="morphToScreen(7, this)">7. Relatórios</button>
+      <button class="strip-btn" onclick="morphToScreen(8, this)">8. Fechamento PDF</button>
+      <button class="strip-btn" onclick="morphToScreen(9, this)">9. Concluído</button>
+      <button class="strip-btn" onclick="morphToScreen(10, this)">10. Configurações</button>
+    </div>
+  </header>
 
-  <div class="content">
-
-    <!-- ══ DASHBOARD ══ -->
-    <div id="s-dash" class="screen on">
-
-      <div class="glass glass-active">
-        <div class="label label-inline"><span class="live-dot"></span>Sessão Ativa</div>
-        <div class="timer" id="timer">01:23:45</div>
-        <div class="timer-meta">
-          Cliente: <strong>Studio Design</strong> &nbsp;<span class="tag">#Design</span>
-        </div>
-        <div class="timer-actions">
-          <button class="btn btn-ghost" id="pauseBtn" onclick="togglePause()">⏸ Pausar</button>
-          <button class="btn btn-primary" onclick="stopTimer()">⏹ Parar</button>
-        </div>
-      </div>
-
-      <div class="glass">
-        <div class="label">Ganhos Hoje</div>
-        <div class="value">R$ 487,50</div>
-        <div class="sub">3 sessões concluídas</div>
-      </div>
-
-      <div style="margin-top:6px">
-        <div class="label" style="padding:0 2px 8px">Sessões Recentes</div>
-
-        <div class="row">
-          <div>
-            <div class="row-name">Startup XYZ</div>
-            <div class="row-meta">14:00 – 16:30 · 2h 30min</div>
-            <span class="tag">#Dev</span>
-          </div>
-          <div class="row-value">R$ 312,50</div>
-        </div>
-
-        <div class="row">
-          <div>
-            <div class="row-name">Agência Criativa</div>
-            <div class="row-meta">10:00 – 11:10 · 1h 10min</div>
-            <span class="tag">#Reunião</span>
-          </div>
-          <div class="row-value">R$ 175,00</div>
-        </div>
-
-        <div class="row">
-          <div>
-            <div class="row-name">Studio Design</div>
-            <div class="row-meta">08:30 – 09:00 · 30min</div>
-            <span class="tag">#Suporte</span>
-          </div>
-          <div class="row-value">R$ 62,50</div>
-        </div>
+  <!-- Phone Container -->
+  <div class="phone-wrapper">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>09:41</span>
+      <div class="status-icons">
+        <span>5G</span>
+        <span>100%</span>
       </div>
     </div>
 
-    <!-- ══ CLIENTS ══ -->
-    <div id="s-clients" class="screen">
-      <div class="client-row">
-        <div><div class="client-name">Startup XYZ</div><div class="client-rate">R$ 125,00/h</div></div>
-        <div style="display:flex;gap:2px">
-          <button class="icon-btn edit">✏️</button><button class="icon-btn del">🗑</button>
-        </div>
-      </div>
-      <div class="client-row">
-        <div><div class="client-name">Agência Criativa</div><div class="client-rate">R$ 150,00/h</div></div>
-        <div style="display:flex;gap:2px">
-          <button class="icon-btn edit">✏️</button><button class="icon-btn del">🗑</button>
-        </div>
-      </div>
-      <div class="client-row">
-        <div><div class="client-name">Studio Design</div><div class="client-rate">R$ 125,00/h</div></div>
-        <div style="display:flex;gap:2px">
-          <button class="icon-btn edit">✏️</button><button class="icon-btn del">🗑</button>
-        </div>
-      </div>
-      <div class="client-row">
-        <div><div class="client-name">Tech Solutions</div><div class="client-rate">R$ 180,00/h</div></div>
-        <div style="display:flex;gap:2px">
-          <button class="icon-btn edit">✏️</button><button class="icon-btn del">🗑</button>
-        </div>
-      </div>
-    </div>
+    <!-- Viewport with all 10 screens -->
+    <div class="screen-viewport">
 
-    <!-- ══ REPORTS ══ -->
-    <div id="s-reports" class="screen">
-      <div class="filters">
-        <div class="fchip on" onclick="setFilt(this,'m')">Mês</div>
-        <div class="fchip" onclick="setFilt(this,'r')">Período</div>
-      </div>
-      <div class="datenav" id="mnav">
-        <button class="datenav-btn">← Anterior</button>
-        <span class="datenav-label">Setembro 2026</span>
-        <button class="datenav-btn">Próximo →</button>
-      </div>
-      <div id="rnav" style="display:none;gap:6px;margin-bottom:14px">
-        <button class="btn btn-ghost" style="flex:1;font-size:11px;padding:8px">De: 01/09/2026</button>
-        <span style="color:var(--text-tertiary);font-size:12px;align-self:center">—</span>
-        <button class="btn btn-ghost" style="flex:1;font-size:11px;padding:8px">Até: 16/09/2026</button>
-      </div>
-
-      <div class="gemini" onclick="openModal('geminiModal')">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:20px">✨</span>
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 1: HOJE / DASHBOARD
+           ══════════════════════════════════════════════════════════ -->
+      <div id="screen-1" class="app-screen active">
+        <div class="today-topbar">
+          <div class="menu-icon" onclick="morphToScreen(10)">
+            <span></span><span></span><span></span>
+          </div>
           <div>
-            <div class="gemini-title">Análise com Gemini AI</div>
-            <div class="gemini-sub">Toque para gerar insights de faturamento</div>
+            <div style="font-size:18px;font-weight:800;">Hoje</div>
+            <div style="font-size:11px;color:var(--text-muted);">Terça, 16 de setembro de 2026</div>
+          </div>
+          <div class="user-avatar" onclick="morphToScreen(6)">D</div>
+        </div>
+
+        <div class="stats-2col">
+          <div class="stat-box">
+            <div class="stat-number">6h 42m</div>
+            <div class="stat-label">Tempo trabalhado</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number orange">R$ 987,40</div>
+            <div class="stat-label">Valor estimado</div>
           </div>
         </div>
-      </div>
 
-      <div class="summary">
-        <div class="glass" style="padding:14px">
-          <div class="label">Horas</div>
-          <div class="value value-sm">38.5h</div>
+        <!-- Active Timer Card with Fluid Morph to Screen 3 -->
+        <div class="active-timer-card" id="cardTodayActive" onclick="morphTodayToScreen3()">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent-bright);letter-spacing:0.5px;">
+              <span class="pulse-dot"></span>EM ANDAMENTO
+            </div>
+            <div style="font-size:11px;color:var(--text-dim);" class="mono">R$ 170,00/h</div>
+          </div>
+
+          <div class="timer-big-digits" id="liveTimerDigits">01:47:26</div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:14px;font-weight:700;">Domsul</div>
+              <div style="font-size:11px;color:var(--text-muted);">API de autenticação • Desenvolvimento</div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--accent-bright);" class="mono" id="activeEarnings">R$ 303,92</div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:14px;" onclick="event.stopPropagation()">
+            <button class="btn-dark" style="flex:1;" onclick="toggleLivePause(this)">⏸ Pausar</button>
+            <button class="btn-glow" style="flex:1;" onclick="morphToScreen(9)">Finalizar</button>
+          </div>
         </div>
-        <div class="glass" style="padding:14px">
-          <div class="label">Faturado</div>
-          <div class="value value-sm value-orange">R$ 5.237</div>
+
+        <!-- Action Row: Cadastrar Cliente & Novo Trabalho -->
+        <div class="action-row">
+          <div class="action-pill" onclick="openAddClientModal()">
+            <span>+</span> Novo Cliente
+          </div>
+          <div class="action-pill" onclick="morphToScreen(2)">
+            <span>▶</span> Iniciar Trabalho
+          </div>
+        </div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--text-dim);letter-spacing:0.8px;margin:12px 0 8px;">PRÓXIMOS DE HOJE</div>
+        
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer;" onclick="morphToScreen(2)">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="badge-square badge-blue">C</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;">Consultoria</div>
+              <div style="font-size:11px;color:var(--text-muted);">Planejamento</div>
+            </div>
+          </div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">00:00</span>
+        </div>
+
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="morphToScreen(2)">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="badge-square badge-teal">S</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;">Site Institucional</div>
+              <div style="font-size:11px;color:var(--text-muted);">Desenvolvimento</div>
+            </div>
+          </div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">14:00</span>
         </div>
       </div>
 
-      <div class="row">
-        <div><div class="row-name">Startup XYZ</div><div class="row-meta">18.5h · 12 sessões</div></div>
-        <div class="row-value" style="color:var(--primary)">R$ 2.312</div>
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 2: NOVO TRABALHO
+           ══════════════════════════════════════════════════════════ -->
+      <div id="screen-2" class="app-screen">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <button class="btn-dark" style="width:34px;height:34px;border-radius:50%;padding:0;" onclick="morphToScreen(1)">‹</button>
+          <div>
+            <div style="font-size:17px;font-weight:800;">Novo Trabalho</div>
+            <div style="font-size:11px;color:var(--text-muted);">Comece a registrar seu tempo</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:10px;border-radius:100px;margin-bottom:12px;">
+          <span style="color:var(--text-dim);">🔍</span>
+          <input placeholder="Buscar cliente ou projeto..." style="background:transparent;border:none;outline:none;color:#FFF;font-size:13px;width:100%;">
+        </div>
+
+        <div class="card" style="padding:12px 14px;margin-bottom:8px;" onclick="openAddClientModal()">
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;">Cliente</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="badge-square badge-blue" style="width:24px;height:24px;font-size:11px;">D</div>
+              <span style="font-size:14px;font-weight:700;">Domsul</span>
+            </div>
+            <span style="color:var(--text-dim);font-size:12px;">Trocar ›</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px 14px;margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;">Projeto</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:var(--warning);">🟡</span>
+              <span style="font-size:14px;font-weight:700;">API de autenticação</span>
+            </div>
+            <span style="color:var(--text-dim);font-size:12px;">›</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px 14px;margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;">Tarefa</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <span style="font-size:14px;font-weight:700;">Desenvolvimento</span>
+            <span style="color:var(--text-dim);font-size:12px;">›</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px 14px;margin-bottom:12px;">
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;">Descrição</div>
+          <input value="Ajustes na API de autenticação" style="background:transparent;border:none;outline:none;color:#FFF;font-size:13px;font-family:var(--font);width:100%;margin-top:4px;">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px 14px;">
+          <span style="font-size:13px;font-weight:600;">Faturável</span>
+          <div style="width:44px;height:24px;border-radius:100px;background:var(--accent);position:relative;cursor:pointer;">
+            <div style="width:20px;height:20px;border-radius:50%;background:#FFF;position:absolute;top:2px;right:2px;"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;padding:0 4px 20px;">
+          <span style="font-size:13px;color:var(--text-muted);">Valor por hora</span>
+          <span style="font-size:15px;font-weight:700;color:var(--accent-bright);" class="mono">R$ 170,00</span>
+        </div>
+
+        <button class="btn-glow" onclick="morphToScreen(3)">Iniciar Trabalho</button>
       </div>
-      <div class="row">
-        <div><div class="row-name">Agência Criativa</div><div class="row-meta">12h · 8 sessões</div></div>
-        <div class="row-value" style="color:var(--primary)">R$ 1.800</div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 3: TIMER ATIVO (FOCO 3D) — REPLICAÇÃO EXATA DO PÔSTER
+           ══════════════════════════════════════════════════════════ -->
+      <div id="screen-3" class="app-screen" style="padding-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0 8px;">
+          <button class="btn-dark" style="width:36px;height:36px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;" onclick="morphScreen3ToToday()">‹</button>
+          <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,#2A201A,#1C1512);padding:6px 14px;border-radius:100px;box-shadow:inset 0 1px 0 rgba(255,107,53,0.35),0 4px 12px rgba(0,0,0,0.3);">
+            <span class="pulse-dot"></span>
+            <span style="font-size:12px;font-weight:700;color:var(--accent-bright);">Em andamento</span>
+          </div>
+          <div style="color:var(--text-dim);cursor:pointer;font-size:20px;padding:0 6px;" onclick="morphToScreen(10)">⋮</div>
+        </div>
+
+        <div style="text-align:center;margin:6px 0 8px;">
+          <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Domsul</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">API de autenticação</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent-bright);margin-top:4px;font-weight:600;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Desenvolvimento</span>
+          </div>
+        </div>
+
+        <!-- 3D ISOMETRIC STAGE MATCHING media_1789841983545.png -->
+        <div class="clock-3d-stage">
+          <!-- Ambient light flare streak -->
+          <div class="diagonal-beam"></div>
+
+          <!-- Isometric Torus Ring with Diagonal Tilt -->
+          <div class="torus-isometric-box" id="torus3D">
+            <!-- Dedicated Canvas for refractive glass chamfers and glowing orange power arcs -->
+            <canvas id="clockCanvas" width="330" height="330"></canvas>
+
+            <!-- Sunken Center Dial -->
+            <div class="sunken-dial">
+              <div class="clock-center-digits">
+                <div class="clock-time-val" id="focoTimerDigits">01:47:26</div>
+                <div class="clock-earn-val" id="focoEarnings">R$ 303,92</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual Metric Cards below ring matching Screen 3 of PDF -->
+        <div class="dual-cards-row">
+          <div class="sub-metric-card">
+            <div class="sub-metric-lbl">Valor/hora</div>
+            <div class="sub-metric-val">R$ 170,00</div>
+          </div>
+          <div class="sub-metric-card" style="text-align:right;">
+            <div class="sub-metric-lbl">Início</div>
+            <div class="sub-metric-val">11:10</div>
+          </div>
+        </div>
+
+        <!-- Dots indicator • • • -->
+        <div class="dots-indicator">
+          <div class="dot-item active"></div>
+          <div class="dot-item"></div>
+          <div class="dot-item"></div>
+        </div>
+
+        <!-- Controls Bar with Sleep button, Bronze Pause and Orange Finalizar -->
+        <div class="clock-controls-bar">
+          <div class="btn-sleep-pause" onclick="togglePauseClock(this)">
+            <div class="btn-sleep-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </div>
+            <span>Pausar</span>
+          </div>
+
+          <button class="btn-bronze-pause" id="btnBronzePause" onclick="togglePauseClock(this)" title="Pausar Trabalho">
+            <span id="pauseIcon">||</span>
+          </button>
+
+          <button class="btn-glow" style="flex:1;height:52px;" onclick="morphToScreen(9)">Finalizar</button>
+        </div>
       </div>
-      <div class="row">
-        <div><div class="row-name">Studio Design</div><div class="row-meta">8h · 6 sessões</div></div>
-        <div class="row-value" style="color:var(--primary)">R$ 1.125</div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 4: HISTÓRICO
+           ══════════════════════════════════════════════════════ -->
+      <div id="screen-4" class="app-screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="menu-icon" onclick="morphToScreen(10)"><span></span><span></span><span></span></div>
+          <div style="font-size:17px;font-weight:800;">Histórico</div>
+          <div style="font-size:14px;color:var(--text-dim);">🔍</div>
+        </div>
+
+        <div class="segmented-control">
+          <button class="seg-pill active" onclick="setSeg(this)">Dia</button>
+          <button class="seg-pill" onclick="setSeg(this)">Semana</button>
+          <button class="seg-pill" onclick="setSeg(this)">Mês</button>
+        </div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin:6px 0 10px;">Sexta-feira, 19 de setembro</div>
+
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-muted);width:50px;">08:10<br><span style="color:var(--text-dim);font-weight:400;">09:30</span></div>
+          <div class="badge-square badge-blue">D</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;">Domsul</div>
+            <div style="font-size:11px;color:var(--text-muted);">Desenvolvimento</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;font-weight:700;" class="mono">2h 30m</div>
+            <div style="font-size:11px;color:var(--accent-bright);font-weight:700;" class="mono">R$ 212,50</div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-muted);width:50px;">10:40<br><span style="color:var(--text-dim);font-weight:400;">11:30</span></div>
+          <div class="badge-square badge-teal">P</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;">Plaza</div>
+            <div style="font-size:11px;color:var(--text-muted);">Reunião</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;font-weight:700;" class="mono">50m</div>
+            <div style="font-size:11px;color:var(--accent-bright);font-weight:700;" class="mono">R$ 84,67</div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-muted);width:50px;">12:30<br><span style="color:var(--text-dim);font-weight:400;">13:50</span></div>
+          <div class="badge-square badge-orange">S</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;">Suporte</div>
+            <div style="font-size:11px;color:var(--text-muted);">Ajustes</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;font-weight:700;" class="mono">1h 20m</div>
+            <div style="font-size:11px;color:var(--accent-bright);font-weight:700;" class="mono">R$ 136,17</div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:12px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-muted);width:50px;">15:10<br><span style="color:var(--text-dim);font-weight:400;">16:00</span></div>
+          <div class="badge-square badge-purple">C</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;">Consultoria</div>
+            <div style="font-size:11px;color:var(--text-muted);">Análise de requisitos</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;font-weight:700;" class="mono">50m</div>
+            <div style="font-size:11px;color:var(--accent-bright);font-weight:700;" class="mono">R$ 118,33</div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;font-weight:700;">Total do dia</div>
+            <div style="font-size:11px;color:var(--text-muted);">4 registros</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:800;" class="mono">5h 50m</div>
+            <div style="font-size:13px;font-weight:800;color:var(--accent-bright);" class="mono">R$ 551,67</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 5: PROJETOS & CLIENTES
+           ══════════════════════════════════════════════════════ -->
+      <div id="screen-5" class="app-screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="menu-icon" onclick="morphToScreen(10)"><span></span><span></span><span></span></div>
+          <div style="font-size:17px;font-weight:800;">Projetos</div>
+          <button class="btn-dark" style="width:34px;height:34px;border-radius:50%;padding:0;font-size:16px;color:var(--accent-bright);" onclick="openAddClientModal()">+</button>
+        </div>
+
+        <div class="action-row">
+          <div class="action-pill" onclick="openAddClientModal()">
+            <span>+</span> Cadastrar Cliente
+          </div>
+          <div class="action-pill" onclick="openAddProjectModal()">
+            <span>+</span> Novo Projeto
+          </div>
+        </div>
+
+        <div class="segmented-control">
+          <button class="seg-pill active" onclick="setSeg(this);toggleProjetosTab('ativos')">Ativos (5)</button>
+          <button class="seg-pill" onclick="setSeg(this);toggleProjetosTab('clientes')">Clientes (4)</button>
+        </div>
+
+        <div id="projetosTabAtivos">
+          <div class="card" style="cursor:pointer;" onclick="morphToScreen(6)">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="badge-square badge-blue">D</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;">Domsul</div>
+                  <div style="font-size:11px;color:var(--text-muted);">API de autenticação</div>
+                </div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:var(--accent-bright);" class="mono">58%</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width:58%;"></div></div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="morphToScreen(6)">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="badge-square badge-teal">S</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;">Site Institucional</div>
+                  <div style="font-size:11px;color:var(--text-muted);">Novo site</div>
+                </div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:var(--accent-bright);" class="mono">37%</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width:37%;"></div></div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="morphToScreen(6)">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="badge-square badge-orange">B</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;">Suporte Técnico</div>
+                  <div style="font-size:11px;color:var(--text-muted);">Manutenção</div>
+                </div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:var(--accent-bright);" class="mono">47%</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width:47%;"></div></div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="morphToScreen(6)">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="badge-square badge-purple">C</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;">Consultoria</div>
+                  <div style="font-size:11px;color:var(--text-muted);">Processos</div>
+                </div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:var(--accent-bright);" class="mono">28%</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width:28%;"></div></div>
+          </div>
+        </div>
+
+        <div id="projetosTabClientes" style="display:none;">
+          <div id="dynamicClientList"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 6: CLIENTE / DETALHES & RELATÓRIO DO CLIENTE (COM PDF)
+           ══════════════════════════════════════════════════════════ -->
+      <div id="screen-6" class="app-screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <button class="btn-dark" style="width:34px;height:34px;border-radius:50%;padding:0;" onclick="morphToScreen(5)">‹</button>
+          <div style="color:var(--text-dim);cursor:pointer;" onclick="openAddClientModal()">•••</div>
+        </div>
+
+        <div class="client-avatar-large" id="clientDetailAvatar">D</div>
+        <div style="text-align:center;margin-bottom:12px;">
+          <div style="font-size:18px;font-weight:800;" id="clientDetailName">Domsul</div>
+          <div style="font-size:12px;color:var(--text-muted);" id="clientDetailCategory">Tecnologia e Software</div>
+        </div>
+
+        <!-- 3 Subtabs: Visão Geral / Projetos / Relatório do Cliente -->
+        <div class="segmented-control">
+          <button class="seg-pill active" onclick="setSeg(this);switchClientSubTab('overview')">Visão Geral</button>
+          <button class="seg-pill" onclick="setSeg(this);switchClientSubTab('projects')">Projetos</button>
+          <button class="seg-pill" onclick="setSeg(this);switchClientSubTab('report')">Relatório & PDF</button>
+        </div>
+
+        <!-- SUBTAB 1: VISÃO GERAL -->
+        <div id="clientSubTabOverview">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div class="stat-box">
+              <div class="stat-number">18h 20m</div>
+              <div class="stat-label">Tempo total</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number orange">R$ 3.116,00</div>
+              <div class="stat-label">Valor faturado</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">R$ 2.040,00</div>
+              <div class="stat-label">Faturado</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" style="color:var(--warning);">R$ 1.076,00</div>
+              <div class="stat-label">Pendente</div>
+            </div>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:var(--text-dim);letter-spacing:0.8px;margin:10px 0 8px;">PROJETOS (3)</div>
+          
+          <div class="card" style="padding:10px 14px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
+              <span>API de autenticação</span>
+              <span class="mono" style="color:var(--accent-bright);">56%</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-top:6px;"><div class="progress-fill" style="width:56%;"></div></div>
+          </div>
+
+          <div class="card" style="padding:10px 14px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
+              <span>Sistema interno</span>
+              <span class="mono" style="color:var(--accent-bright);">28%</span>
+            </div>
+            <div class="progress-bar-bg" style="margin-top:6px;"><div class="progress-fill" style="width:28%;"></div></div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 2: PROJETOS -->
+        <div id="clientSubTabProjects" style="display:none;">
+          <div class="card" style="padding:12px 14px;margin-bottom:8px;">
+            <div style="font-size:13px;font-weight:700;">API de autenticação</div>
+            <div style="font-size:11px;color:var(--text-muted);">Orçamento: 50h • Consumido: 28h</div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width:56%;"></div></div>
+          </div>
+          <div class="card" style="padding:12px 14px;">
+            <div style="font-size:13px;font-weight:700;">Sistema interno</div>
+            <div style="font-size:11px;color:var(--text-muted);">Orçamento: 40h • Consumido: 11h</div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width:28%;"></div></div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 3: RELATÓRIO DO CLIENTE COM FILTRO E EXPORTAÇÃO PDF -->
+        <div id="clientSubTabReport" style="display:none;">
+          <!-- Period selector: Semana / Mês / Período -->
+          <div class="segmented-control" style="margin-bottom:10px;">
+            <button class="seg-pill" onclick="setSeg(this);updateClientReportPeriod('semana')">Semana</button>
+            <button class="seg-pill active" onclick="setSeg(this);updateClientReportPeriod('mes')">Mês</button>
+            <button class="seg-pill" onclick="setSeg(this);updateClientReportPeriod('periodo')">Período</button>
+          </div>
+
+          <!-- Caixa interativa de seleção de período (card moderno ardósia/slate, sem bordas de traço) -->
+          <div id="clientPeriodCard" class="card period-picker-card" style="display:none;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Intervalo do Cliente</span>
+              <span id="clientPeriodDaysBadge" class="period-badge">19 dias</span>
+            </div>
+
+            <!-- Inputs De e Até -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div>
+                <label style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">De:</label>
+                <input type="date" id="clientDateFrom" class="date-input" value="2026-09-01" onchange="onClientDateRangeChange()">
+              </div>
+              <div>
+                <label style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">Até:</label>
+                <input type="date" id="clientDateTo" class="date-input" value="2026-09-19" onchange="onClientDateRangeChange()">
+              </div>
+            </div>
+
+            <!-- Chips de atalho rápido -->
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <button type="button" class="chip-btn" onclick="applyClientPeriodShortcut(7, this)">Últimos 7 dias</button>
+              <button type="button" class="chip-btn" onclick="applyClientPeriodShortcut(15, this)">15 dias</button>
+              <button type="button" class="chip-btn" onclick="applyClientPeriodShortcut(30, this)">30 dias</button>
+              <button type="button" class="chip-btn active" onclick="applyClientPeriodShortcut('month', this)">Mês Atual</button>
+            </div>
+          </div>
+
+          <div style="text-align:center;font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:12px;" id="clientReportPeriodHeader">
+            ‹ &nbsp; Setembro de 2026 &nbsp; ›
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+              <div>
+                <div style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;">Horas no Período</div>
+                <div style="font-size:18px;font-weight:800;" class="mono" id="clientReportHours">18h 20m</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;">Total Faturável</div>
+                <div style="font-size:18px;font-weight:800;color:var(--accent-bright);" class="mono" id="clientReportEarnings">R$ 3.116,00</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);padding-top:8px;">
+              Taxa Base Aplicada: <strong class="mono" style="color:var(--text);" id="clientReportBaseRate">R$ 170,00/h</strong>
+            </div>
+          </div>
+
+          <!-- Weekly bars for this client -->
+          <div class="card" style="padding:14px;margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Horas Semanais do Cliente</div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;height:80px;padding:4px 0;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                <div style="width:20px;height:35px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div>
+                <span style="font-size:9px;color:var(--text-dim);">Sem 1</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                <div style="width:20px;height:55px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div>
+                <span style="font-size:9px;color:var(--text-dim);">Sem 2</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                <div style="width:20px;height:70px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;box-shadow:0 0 10px var(--accent-glow);"></div>
+                <span style="font-size:9px;color:var(--text-dim);">Sem 3</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+                <div style="width:20px;height:40px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div>
+                <span style="font-size:9px;color:var(--text-dim);">Sem 4</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Export to PDF button -->
+          <button class="btn-glow" onclick="openClientPdfModal()">
+            <span>📄</span> Exportar Relatório em PDF (A4)
+          </button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 7: RELATÓRIOS GERAIS
+           ══════════════════════════════════════════════════════ -->
+      <div id="screen-7" class="app-screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="menu-icon" onclick="morphToScreen(10)"><span></span><span></span><span></span></div>
+          <div style="font-size:17px;font-weight:800;">Relatórios</div>
+          <div style="font-size:14px;color:var(--text-dim);">⚙️</div>
+        </div>
+
+        <div class="segmented-control">
+          <button class="seg-pill" onclick="setSeg(this);updateGeneralReportPeriod('semana')">Semana</button>
+          <button class="seg-pill active" onclick="setSeg(this);updateGeneralReportPeriod('mes')">Mês</button>
+          <button class="seg-pill" onclick="setSeg(this);updateGeneralReportPeriod('periodo')">Período</button>
+        </div>
+
+        <!-- Caixa interativa de seleção de período para Tela 7 -->
+        <div id="generalPeriodCard" class="card period-picker-card" style="display:none;padding:14px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Intervalo Geral</span>
+            <span id="generalPeriodDaysBadge" class="period-badge">19 dias</span>
+          </div>
+
+          <!-- Inputs De e Até -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+              <label style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">De:</label>
+              <input type="date" id="generalDateFrom" class="date-input" value="2026-09-01" onchange="onGeneralDateRangeChange()">
+            </div>
+            <div>
+              <label style="display:block;font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">Até:</label>
+              <input type="date" id="generalDateTo" class="date-input" value="2026-09-19" onchange="onGeneralDateRangeChange()">
+            </div>
+          </div>
+
+          <!-- Chips de atalho rápido -->
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button type="button" class="chip-btn" onclick="applyGeneralPeriodShortcut(7, this)">Últimos 7 dias</button>
+            <button type="button" class="chip-btn" onclick="applyGeneralPeriodShortcut(15, this)">15 dias</button>
+            <button type="button" class="chip-btn" onclick="applyGeneralPeriodShortcut(30, this)">30 dias</button>
+            <button type="button" class="chip-btn active" onclick="applyGeneralPeriodShortcut('month', this)">Mês Atual</button>
+          </div>
+        </div>
+
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:10px;" id="generalReportPeriodHeader">
+          ‹ &nbsp; Setembro de 2026 &nbsp; ›
+        </div>
+
+        <div class="stats-2col">
+          <div class="stat-box">
+            <div class="stat-number" id="generalReportHours">32h 47m</div>
+            <div class="stat-label">Tempo total</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number orange" id="generalReportEarnings">R$ 5.842,30</div>
+            <div class="stat-label">Valor faturado</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;">Horas por Semana</div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;height:100px;padding:10px 4px 0;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;"><div style="width:26px;height:45px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div><span style="font-size:9px;color:var(--text-dim);">Sem 1</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;"><div style="width:26px;height:70px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div><span style="font-size:9px;color:var(--text-dim);">Sem 2</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;"><div style="width:26px;height:95px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;box-shadow:0 0 12px var(--accent-glow);"></div><span style="font-size:9px;color:var(--text-dim);">Sem 3</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;"><div style="width:26px;height:60px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div><span style="font-size:9px;color:var(--text-dim);">Sem 4</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;"><div style="width:26px;height:80px;background:linear-gradient(180deg, var(--accent-bright), var(--accent));border-radius:4px 4px 0 0;"></div><span style="font-size:9px;color:var(--text-dim);">Sem 5</span></div>
+          </div>
+        </div>
+
+        <button class="btn-glow" style="margin-top:6px;" onclick="morphToScreen(8)">Ir para Fechamento (PDF)</button>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 8: FECHAMENTO / PDF
+           ══════════════════════════════════════════════════════ -->
+      <div id="screen-8" class="app-screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <button class="btn-dark" style="width:34px;height:34px;border-radius:50%;padding:0;" onclick="morphToScreen(7)">‹</button>
+          <div style="font-size:17px;font-weight:800;">Fechamento</div>
+          <div style="font-size:14px;color:var(--text-dim);">📅</div>
+        </div>
+
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;">Resumo do período</div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.04);">
+            <span style="color:var(--text-muted);">⏱ Tempo total</span>
+            <strong class="mono">32h 45m</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.04);">
+            <span style="color:var(--text-muted);">💰 Valor faturado</span>
+            <strong class="mono" style="color:var(--accent-bright);">R$ 5.587,50</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;">
+            <span style="color:var(--text-muted);">📋 Registros</span>
+            <strong class="mono">24</strong>
+          </div>
+        </div>
+
+        <button class="btn-glow" style="margin-top:10px;" onclick="openClientPdfModal()">Gerar Fechamento (PDF)</button>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 9: REGISTRO CONCLUÍDO
+           ══════════════════════════════════════════════════════ -->
+      <div id="screen-9" class="app-screen" style="text-align:center;padding-top:20px;">
+        <div style="width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 35% 35%, #1F2731 0%, #0F1318 100%);display:flex;align-items:center;justify-content:center;margin:10px auto 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px var(--accent-glow);">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="3">
+            <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div style="font-size:20px;font-weight:800;margin-bottom:4px;">Trabalho finalizado!</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Seu registro foi salvo com sucesso.</div>
+
+        <div class="card" style="text-align:left;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div class="badge-square badge-blue">D</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;">Domsul</div>
+              <div style="font-size:11px;color:var(--text-muted);">API de autenticação</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);padding-top:10px;">
+            <div><div style="font-size:10px;color:var(--text-dim);">DURAÇÃO</div><div style="font-size:17px;font-weight:800;" class="mono">1h 23m</div></div>
+            <div><div style="font-size:10px;color:var(--text-dim);">VALOR TOTAL</div><div style="font-size:17px;font-weight:800;color:var(--accent-bright);" class="mono">R$ 235,67</div></div>
+          </div>
+        </div>
+
+        <button class="btn-dark" style="margin-top:14px;width:100%;" onclick="morphToScreen(4)">Ver no Histórico</button>
+        <button class="btn-glow" style="margin-top:8px;" onclick="morphToScreen(2)">Novo registro</button>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           TELA 10: CONFIGURAÇÕES & AJUSTES
+           ══════════════════════════════════════════════════════ -->
+      <div id="screen-10" class="app-screen" style="padding-bottom:34px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button class="btn-dark" style="width:34px;height:34px;border-radius:50%;padding:0;" onclick="morphToScreen(1)">‹</button>
+          <div style="font-size:17px;font-weight:800;">Configurações</div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:0.8px;margin-bottom:8px;">GERAL</div>
+        <div class="card" style="padding:0 14px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;padding:12px 0;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.04);font-size:13px;">
+            <span>Modelo de horas</span><span style="color:var(--text-muted);">Real (R$) ›</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.04);font-size:13px;">
+            <span>Arredondamento</span><span style="color:var(--text-muted);">5 minutos ›</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:13px;">
+            <span>Taxa padrão</span><span style="color:var(--accent-bright);" class="mono">R$ 150,00 ›</span>
+          </div>
+        </div>
+
+        <!-- DADOS DA MINHA EMPRESA (RELATÓRIOS & PDF) -->
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:0.8px;margin-bottom:8px;">DADOS DA MINHA EMPRESA (RELATÓRIOS & PDF)</div>
+        <div class="card" style="padding:16px;margin-bottom:16px;">
+          <!-- Upload de logo da empresa -->
+          <input type="file" id="companyLogoFileInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(this)">
+          
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:14px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.05);">
+            <div id="companyLogoPreviewBox" style="width:68px;height:68px;border-radius:18px;background:#15181E;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:inset 0 1px 3px rgba(0,0,0,0.4);">
+              <img id="companyLogoPreview" src="" alt="Logo" style="display:none;width:100%;height:100%;object-fit:contain;padding:5px;">
+              <div id="companyLogoPlaceholder" style="font-size:24px;color:var(--text-dim);">🏢</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;margin-bottom:3px;">Logotipo da Empresa</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">Exibido no cabeçalho dos Relatórios e PDF Editorial.</div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button type="button" class="btn-dark" style="font-size:11px;padding:6px 12px;border-radius:100px;" onclick="document.getElementById('companyLogoFileInput').click()">
+                  📷 Subir Logo da Empresa
+                </button>
+                <button type="button" id="removeLogoBtn" class="btn-dark" style="display:none;font-size:11px;padding:6px 10px;border-radius:100px;color:var(--danger);" onclick="removeCompanyLogo()">
+                  Remover
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campos de texto -->
+          <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;">Razão Social / Nome Fantasia</label>
+            <input type="text" id="companyNameInput" class="input-field" placeholder="Ex: Brandler Soluções Digitais" value="Brandler Soluções Digitais">
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;">CNPJ / CPF</label>
+            <input type="text" id="companyCnpjInput" class="input-field" placeholder="00.000.000/0001-00" value="12.345.678/0001-90">
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;">Telefone / WhatsApp</label>
+            <input type="text" id="companyPhoneInput" class="input-field" placeholder="(11) 98765-4321" value="(11) 98765-4321">
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;">Chave PIX</label>
+            <input type="text" id="companyPixInput" class="input-field" placeholder="Chave Pix para recebimento" value="financeiro@brandler.com.br">
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;">E-mail Comercial</label>
+            <input type="email" id="companyEmailInput" class="input-field" placeholder="contato@empresa.com.br" value="contato@brandler.com.br">
+          </div>
+
+          <!-- Botão Salvar Dados da Empresa -->
+          <button type="button" class="btn-glow" id="saveCompanyBtn" style="width:100%;" onclick="saveCompanyData()">
+            💾 Salvar Dados da Empresa
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-tab active" onclick="morphToScreen(1);setTabActive(this)">
+        <svg viewBox="0 0 24 24"><path d="M12 2L3 9V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V9L12 2Z"/></svg>
+        <span>Hoje</span>
+      </button>
+      <button class="nav-tab" onclick="morphToScreen(4);setTabActive(this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+        <span>Histórico</span>
+      </button>
+      <button class="nav-tab" onclick="morphToScreen(5);setTabActive(this)">
+        <svg viewBox="0 0 24 24"><path d="M22 19V8C22 6.89543 21.1046 6 20 6H12L10 4H4C2.89543 4 2 4.89543 2 6V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19Z"/></svg>
+        <span>Projetos</span>
+      </button>
+      <button class="nav-tab" onclick="morphToScreen(7);setTabActive(this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+        <span>Relatórios</span>
+      </button>
+      <button class="nav-tab" onclick="morphToScreen(10);setTabActive(this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15A1.65 1.65 0 0 0 20.6 17.5L20.8 17.8A2 2 0 1 1 18 20.6L17.7 20.4A1.65 1.65 0 0 0 15 19.4A1.65 1.65 0 0 0 14 20.8V21.1A2 2 0 1 1 10 21.1V20.8A1.65 1.65 0 0 0 9 19.4A1.65 1.65 0 0 0 6.5 20.6L6.2 20.8A2 2 0 1 1 3.4 18L3.6 17.7A1.65 1.65 0 0 0 2.6 15A1.65 1.65 0 0 0 1.2 14H0.9A2 2 0 1 1 0.9 10H1.2A1.65 1.65 0 0 0 2.6 9A1.65 1.65 0 0 0 1.4 6.5L1.2 6.2A2 2 0 1 1 4 3.4L4.3 3.6A1.65 1.65 0 0 0 7 2.6A1.65 1.65 0 0 0 8 1.2V0.9A2 2 0 1 1 12 0.9V1.2A1.65 1.65 0 0 0 13 2.6A1.65 1.65 0 0 0 15.5 1.4L15.8 1.2A2 2 0 1 1 18.6 4L18.4 4.3A1.65 1.65 0 0 0 19.4 7A1.65 1.65 0 0 0 20.8 8H21.1A2 2 0 1 1 21.1 12H20.8A1.65 1.65 0 0 0 19.4 15Z"/></svg>
+        <span>Ajustes</span>
+      </button>
+    </nav>
+
+    <!-- Modal: Cadastrar Novo Cliente -->
+    <div class="modal-overlay" id="addClientModal">
+      <div class="modal-sheet">
+        <div class="modal-title">
+          <span>Cadastrar Novo Cliente</span>
+          <button class="btn-dark" style="width:28px;height:28px;border-radius:50%;padding:0;" onclick="closeModal('addClientModal')">✕</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:6px;">NOME DO CLIENTE *</div>
+        <input class="input-field" id="modalClientName" placeholder="Ex: Domsul, Acme Corp...">
+        <div style="font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:6px;">RAMO / CATEGORIA *</div>
+        <input class="input-field" id="modalClientCategory" placeholder="Ex: Tecnologia e Software...">
+        <div style="font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:6px;">TAXA HORÁRIA (R$/h) *</div>
+        <input class="input-field" id="modalClientRate" type="number" value="170">
+        <button class="btn-glow" style="margin-top:10px;" onclick="saveNewClient()">Salvar Cliente</button>
       </div>
     </div>
-  </div>
 
-  <button class="fab" id="fab" onclick="openModal('startModal')">+</button>
-
-  <div class="nav">
-    <button class="nav-item on" onclick="tab('dash',this)"><span class="ni">📊</span>Dashboard</button>
-    <button class="nav-item" onclick="tab('clients',this)"><span class="ni">👥</span>Clientes</button>
-    <button class="nav-item" onclick="tab('reports',this)"><span class="ni">📈</span>Relatórios</button>
-  </div>
-
-  <!-- ═══ MODALS ═══ -->
-
-  <div class="overlay" id="startModal">
-    <div class="modal">
-      <h3>Iniciar Trabalho</h3>
-      <div class="label">Selecione o Cliente</div>
-      <label class="radio-row"><input type="radio" name="c" checked> Startup XYZ</label>
-      <label class="radio-row"><input type="radio" name="c"> Agência Criativa</label>
-      <label class="radio-row"><input type="radio" name="c"> Studio Design</label>
-      <div class="sep"></div>
-      <div class="label">Categoria</div>
-      <div class="chips">
-        <span class="chip on">#Dev</span><span class="chip">#Reunião</span>
-        <span class="chip">#Design</span><span class="chip">#Suporte</span>
-        <span class="chip">#Consultoria</span><span class="chip">#Outro</span>
-      </div>
-      <div class="sep"></div>
-      <div class="label">Descrição</div>
-      <textarea class="modal-input" placeholder="Descrição do serviço..."></textarea>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <button class="btn btn-ghost" onclick="closeModal('startModal')">Cancelar</button>
-        <button class="btn btn-primary" onclick="closeModal('startModal')">Iniciar</button>
+    <!-- Modal: Novo Projeto -->
+    <div class="modal-overlay" id="addProjectModal">
+      <div class="modal-sheet">
+        <div class="modal-title">
+          <span>Cadastrar Novo Projeto</span>
+          <button class="btn-dark" style="width:28px;height:28px;border-radius:50%;padding:0;" onclick="closeModal('addProjectModal')">✕</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:6px;">NOME DO PROJETO *</div>
+        <input class="input-field" id="modalProjName" placeholder="Ex: API de autenticação">
+        <div style="font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:6px;">ORÇAMENTO EM HORAS</div>
+        <input class="input-field" id="modalProjBudget" type="number" value="50">
+        <button class="btn-glow" style="margin-top:10px;" onclick="saveNewProject()">Salvar Projeto</button>
       </div>
     </div>
-  </div>
 
-  <div class="overlay" id="geminiModal">
-    <div class="modal">
-      <h3 style="color:var(--primary)">✨ Análise — Setembro 2026</h3>
-      <div style="font-size:13px;line-height:1.7;color:var(--text-secondary)">
-        <p>Em Setembro você trabalhou <strong style="color:var(--green)">38.5 horas</strong> e faturou <strong style="color:var(--primary)">R$ 5.237,50</strong>.</p>
-        <div class="sep"></div>
-        <p style="color:var(--text);font-weight:500">💡 Insights</p>
-        <ul style="padding-left:16px;margin-top:4px;font-size:12px">
-          <li>Startup XYZ = 44% do faturamento total</li>
-          <li>Valor médio/hora efetivo: R$ 136,04</li>
-          <li>Distribuição saudável entre 3 clientes</li>
-        </ul>
-        <div class="sep"></div>
-        <p style="color:var(--text);font-weight:500">🎯 Recomendações</p>
-        <ul style="padding-left:16px;margin-top:4px;font-size:12px">
-          <li>Reajustar taxa Agência Criativa → R$ 165/h</li>
-          <li>Aumentar sessões com Studio Design</li>
-        </ul>
+    <!-- Modal: Visualizar PDF Editorial A4 do Cliente -->
+    <div class="modal-overlay" id="clientPdfModal">
+      <div class="modal-sheet" style="background:#FAF9F5;color:#181D22;border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;box-shadow:inset 0 -1px 0 rgba(0,0,0,0.06);padding-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img id="pdfCompanyLogoImg" src="" alt="Logo da Empresa" style="display:none;width:44px;height:44px;object-fit:contain;border-radius:10px;background:#FFF;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:3px;flex-shrink:0;">
+            <div>
+              <div style="font-size:15px;font-weight:800;color:#181D22;" id="pdfClientCompanyTitle">Brandler Soluções Digitais • Relatório Editorial</div>
+              <div style="font-size:11px;color:#64748B;" id="pdfCompanyCnpjPix">CNPJ: 12.345.678/0001-90 • Tel: (11) 98765-4321 • Chave Pix: financeiro@brandler.com.br</div>
+            </div>
+          </div>
+          <button class="btn-dark" style="background:#E2E4E8;color:#333;width:30px;height:30px;padding:0;" onclick="closeModal('clientPdfModal')">✕</button>
+        </div>
+
+        <div style="margin:16px 0 10px;">
+          <div style="font-size:15px;font-weight:800;color:#E45A25;">RELATÓRIO DE PRESTAÇÃO DE SERVIÇOS</div>
+          <div style="font-size:12px;color:#64748B;" id="pdfMetaSubtitle">Cliente: Domsul • Período: 01/09/2026 a 19/09/2026</div>
+        </div>
+
+        <div style="background:#F1EFEA;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;">
+          <div>
+            <div style="font-size:10px;color:#64748B;font-weight:700;">TOTAL DE HORAS</div>
+            <div style="font-size:16px;font-weight:800;color:#181D22;" class="mono" id="pdfModalHours">18h 20m</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:#64748B;font-weight:700;">VALOR LÍQUIDO A RECEBER</div>
+            <div style="font-size:16px;font-weight:800;color:#E45A25;" class="mono" id="pdfModalEarnings">R$ 3.116,00</div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;">HISTÓRICO EXECUTIVO DAS SESSÕES</div>
+        <div style="font-size:11px;box-shadow:inset 0 -1px 0 rgba(0,0,0,0.06);padding-bottom:10px;line-height:1.6;" id="pdfSessionRows">
+          <div>• 16/09 — Refatoração de autenticação JWT: <strong>01h 47m</strong> (R$ 303,92)</div>
+          <div>• 15/09 — Implementação de rotas e segurança: <strong>02h 30m</strong> (R$ 425,00)</div>
+          <div>• 12/09 — Análise arquitetural e modelagem: <strong>03h 15m</strong> (R$ 552,50)</div>
+        </div>
+
+        <div style="margin-top:20px;padding-top:14px;box-shadow:inset 0 1px 0 rgba(0,0,0,0.06);text-align:center;font-size:11px;color:#64748B;">
+          De Acordo do Cliente: _____________________________________
+        </div>
+
+        <button class="btn-glow" style="margin-top:16px;background:#E45A25;" onclick="alert('PDF Editorial gerado e pronto para envio via WhatsApp ou E-mail!');closeModal('clientPdfModal');">
+          Baixar / Compartilhar PDF A4
+        </button>
       </div>
-      <button class="modal-close" onclick="closeModal('geminiModal')">Fechar</button>
     </div>
+
   </div>
 
-  <div class="overlay" id="settingsModal">
-    <div class="modal">
-      <h3>Configurações</h3>
-      <div class="label">Nome da Empresa</div>
-      <input class="modal-input" value="Marcos Brandler Dev" style="margin-bottom:10px">
-      <div class="label">CNPJ</div>
-      <input class="modal-input" value="12.345.678/0001-00" style="margin-bottom:10px">
-      <div class="label">Dia de Fechamento</div>
-      <input class="modal-input" value="1" type="number" style="margin-bottom:4px">
-      <div class="sep"></div>
-      <div class="label">Backup de Dados</div>
-      <div class="backup-row">
-        <button class="backup-btn">📤 Exportar</button>
-        <button class="backup-btn">📥 Restaurar</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <button class="btn btn-ghost" onclick="closeModal('settingsModal')">Cancelar</button>
-        <button class="btn btn-primary" onclick="closeModal('settingsModal')">Salvar</button>
-      </div>
-    </div>
-  </div>
-</div>
+  <!-- Real Canvas 3D Torus Engine & State Management -->
+  <script>
+    const state = {
+      currentScreen: 1,
+      secondsElapsed: 6446, // 01:47:26
+      hourlyRate: 170.00,
+      isPaused: false,
+      clients: [
+        { id: 1, name: "Domsul", category: "Tecnologia e Software", rate: 170.00, badge: "D", color: "badge-blue" },
+        { id: 2, name: "Site Institucional", category: "Design e Web", rate: 150.00, badge: "S", color: "badge-teal" },
+        { id: 3, name: "Suporte Técnico", category: "Infra & Cloud", rate: 140.00, badge: "B", color: "badge-orange" },
+        { id: 4, name: "Consultoria", category: "Gestão Ágil", rate: 180.00, badge: "C", color: "badge-purple" }
+      ],
+      selectedClient: "Domsul",
+      rotationAngle: 0,
+      company: {
+        name: "Brandler Soluções Digitais",
+        cnpj: "12.345.678/0001-90",
+        phone: "(11) 98765-4321",
+        pix: "financeiro@brandler.com.br",
+        email: "contato@brandler.com.br",
+        logoUrl: null
+      },
+      clientReportPeriodMode: 'mes',
+      clientPeriodFrom: '2026-09-01',
+      clientPeriodTo: '2026-09-19',
+      generalReportPeriodMode: 'mes',
+      generalPeriodFrom: '2026-09-01',
+      generalPeriodTo: '2026-09-19'
+    };
 
-<script>
-  // Tabs
-  function tab(id,el) {
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
-    document.getElementById('s-'+id).classList.add('on');
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-    el.classList.add('on');
-    const t={dash:'Dashboard',clients:'Meus Clientes',reports:'Relatórios'};
-    document.getElementById('title').textContent=t[id];
-    document.getElementById('fab').style.display=id==='reports'?'none':'flex';
-  }
+    // Load persisted company data from localStorage if available
+    try {
+      const savedCompany = localStorage.getItem('tempotrack_company');
+      if (savedCompany) {
+        const parsed = JSON.parse(savedCompany);
+        Object.assign(state.company, parsed);
+      }
+    } catch (e) {
+      console.warn('Could not read company from localStorage', e);
+    }
 
-  // Timer
-  let secs=5025, running=true, iv;
-  function tick(){secs++;upd()}
-  function upd(){
-    const h=Math.floor(secs/3600),m=Math.floor(secs%3600/60),s=secs%60;
-    document.getElementById('timer').textContent=
-      String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-  }
-  function togglePause(){
-    if(running){clearInterval(iv);running=false;document.getElementById('pauseBtn').textContent='▶ Retomar'}
-    else{iv=setInterval(tick,1000);running=true;document.getElementById('pauseBtn').textContent='⏸ Pausar'}
-  }
-  function stopTimer(){clearInterval(iv);document.querySelector('.glass-active').style.display='none'}
-  iv=setInterval(tick,1000);
+    function fmtTime(sec) {
+      const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
 
-  // Modals
-  function openModal(id){document.getElementById(id).classList.add('show')}
-  function closeModal(id){document.getElementById(id).classList.remove('show')}
+    function fmtMoney(val) {
+      return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
 
-  // Chips
-  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
-    c.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-    c.classList.add('on');
-  }));
+    // ══ INDIVIDUAL ELEMENT-TO-ELEMENT TRANSFORMATION ENGINE (FIRME, RÁPIDA, ZERO BALANÇO) ══
+    let isMutating = false;
 
-  // Filter
-  function setFilt(el,m){
-    document.querySelectorAll('.fchip').forEach(f=>f.classList.remove('on'));
-    el.classList.add('on');
-    document.getElementById('mnav').style.display=m==='m'?'flex':'none';
-    document.getElementById('rnav').style.display=m==='r'?'flex':'none';
-  }
-</script>
+    // Mutação Específica: Cada elemento da Tela 1 se transforma individualmente no elemento da Tela 3
+    function morphTodayToScreen3() {
+      if (isMutating || state.currentScreen === 3) return;
+      isMutating = true;
+
+      const s1 = document.getElementById('screen-1');
+      const s3 = document.getElementById('screen-3');
+      const card = document.getElementById('cardTodayActive');
+      const torus = document.getElementById('torus3D');
+
+      if (!s1 || !s3 || !card || !window.gsap) {
+        if (s1) s1.classList.remove('active');
+        if (s3) s3.classList.add('active');
+        state.currentScreen = 3;
+        updateNavigationIndicators(3);
+        isMutating = false;
+        return;
+      }
+
+      // Elementos de partida (Tela 1)
+      const topbar1 = s1.querySelector('.today-topbar');
+      const stats1 = s1.querySelector('.stats-2col');
+      const card1 = card;
+      const digits1 = document.getElementById('liveTimerDigits');
+      const earn1 = document.getElementById('activeEarnings');
+      const actionRow1 = s1.querySelector('.action-row');
+
+      // Guardar retângulos antes da troca
+      const rTopbar1 = topbar1 ? topbar1.getBoundingClientRect() : null;
+      const rStats1 = stats1 ? stats1.getBoundingClientRect() : null;
+      const rCard1 = card1.getBoundingClientRect();
+      const rDigits1 = digits1 ? digits1.getBoundingClientRect() : null;
+      const rEarn1 = earn1 ? earn1.getBoundingClientRect() : null;
+      const rAction1 = actionRow1 ? actionRow1.getBoundingClientRect() : null;
+
+      // Troca atômica de tela no DOM (zero fade)
+      s1.classList.remove('active');
+      s3.classList.add('active');
+      state.currentScreen = 3;
+      updateNavigationIndicators(3);
+
+      // Elementos de destino (Tela 3)
+      const topbar3 = s3.querySelector('div:first-child');
+      const clockStage3 = s3.querySelector('.clock-3d-stage');
+      const dualCards3 = s3.querySelector('.dual-cards-row');
+      const controls3 = s3.querySelector('.clock-controls-bar');
+      const digits3 = document.getElementById('focoTimerDigits');
+      const earn3 = document.getElementById('focoEarnings');
+
+      // 1. Topbar morph individual
+      if (topbar1 && topbar3 && rTopbar1) {
+        const r3 = topbar3.getBoundingClientRect();
+        gsap.fromTo(topbar3,
+          { y: rTopbar1.top - r3.top, opacity: 0.9 },
+          { y: 0, opacity: 1, duration: 0.22, ease: "power4.out" }
+        );
+      }
+
+      // 2. O Cartão Ativo individualmente se expande e se transforma no Estágio 3D
+      if (clockStage3) {
+        const r3 = clockStage3.getBoundingClientRect();
+        const dy = rCard1.top - r3.top;
+        const scaleX = rCard1.width / r3.width;
+        const scaleY = rCard1.height / r3.height;
+
+        gsap.fromTo(clockStage3,
+          { y: dy, scaleX: Math.max(0.75, scaleX), scaleY: Math.max(0.65, scaleY), borderRadius: "20px" },
+          { y: 0, scaleX: 1, scaleY: 1, borderRadius: "0px", duration: 0.26, ease: "power4.out" }
+        );
+      }
+
+      // 3. Os Dígitos e o Valor viajam individualmente para o centro do relógio
+      if (digits3 && rDigits1) {
+        const r3 = digits3.getBoundingClientRect();
+        gsap.fromTo(digits3,
+          { y: rDigits1.top - r3.top, scale: 0.8 },
+          { y: 0, scale: 1, duration: 0.26, ease: "power4.out" }
+        );
+      }
+      if (earn3 && rEarn1) {
+        const r3 = earn3.getBoundingClientRect();
+        gsap.fromTo(earn3,
+          { y: rEarn1.top - r3.top, x: rEarn1.left - r3.left },
+          { y: 0, x: 0, duration: 0.26, ease: "power4.out" }
+        );
+      }
+
+      // 4. O Torus 3D se materializa firmemente e trava na posição
+      if (torus) {
+        gsap.fromTo(torus,
+          { scale: 0.85, rotateX: 20 },
+          { scale: 1, rotateX: 54, duration: 0.26, ease: "power4.out" }
+        );
+      }
+
+      // 5. As caixas de estatística da Tela 1 viajam e se transformam nos cartões duplos da Tela 3
+      if (dualCards3 && rStats1) {
+        const r3 = dualCards3.getBoundingClientRect();
+        gsap.fromTo(dualCards3,
+          { y: rStats1.top - r3.top, scale: 0.95 },
+          { y: 0, scale: 1, duration: 0.25, ease: "power4.out" }
+        );
+      }
+
+      // 6. Os botões de ação viajam e se transformam na barra de controles
+      if (controls3 && rAction1) {
+        const r3 = controls3.getBoundingClientRect();
+        gsap.fromTo(controls3,
+          { y: rAction1.top - r3.top, scale: 0.96 },
+          { y: 0, scale: 1, duration: 0.26, ease: "power4.out", onComplete: () => { isMutating = false; } }
+        );
+      } else {
+        setTimeout(() => { isMutating = false; }, 260);
+      }
+    }
+
+    // Mutação Reversa: Cada elemento da Tela 3 individualmente se transforma de volta no elemento da Tela 1
+    function morphScreen3ToToday() {
+      if (isMutating || state.currentScreen === 1) return;
+      isMutating = true;
+
+      const s1 = document.getElementById('screen-1');
+      const s3 = document.getElementById('screen-3');
+      const card = document.getElementById('cardTodayActive');
+
+      if (!s1 || !s3 || !card || !window.gsap) {
+        if (s3) s3.classList.remove('active');
+        if (s1) s1.classList.add('active');
+        state.currentScreen = 1;
+        updateNavigationIndicators(1);
+        isMutating = false;
+        return;
+      }
+
+      // Elementos de partida (Tela 3)
+      const topbar3 = s3.querySelector('div:first-child');
+      const clockStage3 = s3.querySelector('.clock-3d-stage');
+      const dualCards3 = s3.querySelector('.dual-cards-row');
+      const controls3 = s3.querySelector('.clock-controls-bar');
+      const digits3 = document.getElementById('focoTimerDigits');
+
+      const rTopbar3 = topbar3 ? topbar3.getBoundingClientRect() : null;
+      const rClock3 = clockStage3 ? clockStage3.getBoundingClientRect() : null;
+      const rDual3 = dualCards3 ? dualCards3.getBoundingClientRect() : null;
+      const rControls3 = controls3 ? controls3.getBoundingClientRect() : null;
+      const rDigits3 = digits3 ? digits3.getBoundingClientRect() : null;
+
+      // Troca atômica no DOM
+      s3.classList.remove('active');
+      s1.classList.add('active');
+      state.currentScreen = 1;
+      updateNavigationIndicators(1);
+
+      // Elementos de destino (Tela 1)
+      const topbar1 = s1.querySelector('.today-topbar');
+      const stats1 = s1.querySelector('.stats-2col');
+      const card1 = card;
+      const digits1 = document.getElementById('liveTimerDigits');
+      const actionRow1 = s1.querySelector('.action-row');
+      const listCards1 = s1.querySelectorAll('.card');
+
+      // 1. Topbar morph individual
+      if (topbar1 && rTopbar3) {
+        const r1 = topbar1.getBoundingClientRect();
+        gsap.fromTo(topbar1,
+          { y: rTopbar3.top - r1.top },
+          { y: 0, duration: 0.22, ease: "power4.out" }
+        );
+      }
+
+      // 2. O Estágio 3D se contrai firmemente de volta no Cartão Ativo
+      if (card1 && rClock3) {
+        const r1 = card1.getBoundingClientRect();
+        const dy = rClock3.top - r1.top;
+        const scaleX = rClock3.width / r1.width;
+        const scaleY = rClock3.height / r1.height;
+
+        gsap.fromTo(card1,
+          { y: dy, scaleX: Math.min(1.25, scaleX), scaleY: Math.min(1.35, scaleY) },
+          { y: 0, scaleX: 1, scaleY: 1, duration: 0.25, ease: "power4.out" }
+        );
+      }
+
+      // 3. Os dígitos viajam de volta para a posição do cartão
+      if (digits1 && rDigits3) {
+        const r1 = digits1.getBoundingClientRect();
+        gsap.fromTo(digits1,
+          { y: rDigits3.top - r1.top, scale: 1.1 },
+          { y: 0, scale: 1, duration: 0.25, ease: "power4.out" }
+        );
+      }
+
+      // 4. Cartões duplos sobem de volta para as caixas de estatísticas
+      if (stats1 && rDual3) {
+        const r1 = stats1.getBoundingClientRect();
+        gsap.fromTo(stats1,
+          { y: rDual3.top - r1.top, scale: 0.95 },
+          { y: 0, scale: 1, duration: 0.24, ease: "power4.out" }
+        );
+      }
+
+      // 5. Controles voltam para os botões de ação
+      if (actionRow1 && rControls3) {
+        const r1 = actionRow1.getBoundingClientRect();
+        gsap.fromTo(actionRow1,
+          { y: rControls3.top - r1.top, scale: 0.95 },
+          { y: 0, scale: 1, duration: 0.25, ease: "power4.out" }
+        );
+      }
+
+      // 6. Lista de tarefas reaparece de baixo firmemente
+      if (listCards1 && listCards1.length > 0) {
+        gsap.fromTo(listCards1,
+          { y: 14, opacity: 0.8 },
+          { y: 0, opacity: 1, duration: 0.22, stagger: 0.02, ease: "power4.out", onComplete: () => { isMutating = false; } }
+        );
+      } else {
+        setTimeout(() => { isMutating = false; }, 260);
+      }
+    }
+
+    // Mutação Geral entre Quaisquer Telas: Cada elemento individualmente se transforma no elemento correspondente
+    function morphToScreen(screenNum, btnElement) {
+      if (state.currentScreen === screenNum || isMutating) return;
+
+      // Atalhos de alta fidelidade entre 1 e 3
+      if (state.currentScreen === 1 && screenNum === 3) {
+        morphTodayToScreen3();
+        return;
+      }
+      if (state.currentScreen === 3 && screenNum === 1) {
+        morphScreen3ToToday();
+        return;
+      }
+
+      const currentEl = document.getElementById(`screen-${state.currentScreen}`);
+      const nextEl = document.getElementById(`screen-${screenNum}`);
+      if (!nextEl) return;
+
+      isMutating = true;
+
+      if (window.gsap && currentEl) {
+        const direction = screenNum > state.currentScreen ? 1 : -1;
+
+        // 1. Mapeia cada bloco visual da tela atual
+        const itemsA = Array.from(currentEl.querySelectorAll('.today-topbar, .stats-2col, .stat-box, .card, .active-timer-card, .action-row, .segmented-control, .clock-3d-stage, .dual-cards-row, .clock-controls-bar, .client-avatar-large, .btn-glow, .btn-dark')).filter(el => el.offsetParent !== null);
+        const rectsA = itemsA.map(el => el.getBoundingClientRect());
+
+        // 2. Troca imediata da tela no DOM (ZERO OPACITY CROSSFADE)
+        currentEl.classList.remove('active');
+        nextEl.classList.add('active');
+        state.currentScreen = screenNum;
+        updateNavigationIndicators(screenNum);
+
+        // 3. Mapeia cada bloco visual da tela de destino
+        const itemsB = Array.from(nextEl.querySelectorAll('.today-topbar, .stats-2col, .stat-box, .card, .active-timer-card, .action-row, .segmented-control, .clock-3d-stage, .dual-cards-row, .clock-controls-bar, .client-avatar-large, .btn-glow, .btn-dark')).filter(el => el.offsetParent !== null);
+        const rectsB = itemsB.map(el => el.getBoundingClientRect());
+
+        // 4. Executa a transformação física individual elemento a elemento (FLIP firme e rápido)
+        itemsB.forEach((elB, idx) => {
+          const rB = rectsB[idx];
+          const rA = rectsA[Math.min(idx, rectsA.length - 1)];
+
+          if (rA && rB) {
+            const dx = rA.left - rB.left;
+            const dy = rA.top - rB.top;
+            const sx = Math.max(0.7, Math.min(1.3, rA.width / rB.width));
+            const sy = Math.max(0.7, Math.min(1.3, rA.height / rB.height));
+
+            gsap.fromTo(elB,
+              { x: dx, y: dy, scaleX: sx, scaleY: sy, transformOrigin: "center center" },
+              {
+                x: 0, y: 0, scaleX: 1, scaleY: 1,
+                duration: 0.25,
+                stagger: 0.015,
+                ease: "power4.out", // FIRME E RÁPIDO, SEM BALANÇO!
+                clearProps: "transform",
+                onComplete: idx === itemsB.length - 1 ? () => { isMutating = false; } : null
+              }
+            );
+          } else {
+            // Elemento extra sem par direto entra com snap firme e rápido
+            gsap.fromTo(elB,
+              { y: direction * 16, scale: 0.96 },
+              {
+                y: 0, scale: 1,
+                duration: 0.22,
+                ease: "power4.out",
+                clearProps: "transform",
+                onComplete: idx === itemsB.length - 1 ? () => { isMutating = false; } : null
+              }
+            );
+          }
+        });
+
+        // Timeout de garantia
+        setTimeout(() => { isMutating = false; }, 280);
+      } else {
+        if (currentEl) currentEl.classList.remove('active');
+        nextEl.classList.add('active');
+        state.currentScreen = screenNum;
+        updateNavigationIndicators(screenNum);
+        isMutating = false;
+      }
+
+      const vp = document.querySelector('.screen-viewport');
+      if (vp) vp.scrollTop = 0;
+    }
+
+    function updateNavigationIndicators(screenNum) {
+      // Atualiza botões da fita superior
+      const buttons = document.querySelectorAll('.strip-btn');
+      buttons.forEach((b, idx) => {
+        b.classList.toggle('active', idx === screenNum - 1);
+      });
+
+      // Atualiza barra de abas inferior
+      const bottomTabs = document.querySelectorAll('.nav-tab');
+      bottomTabs.forEach(t => t.classList.remove('active'));
+      if (screenNum === 1 && bottomTabs[0]) bottomTabs[0].classList.add('active');
+      if (screenNum === 4 && bottomTabs[1]) bottomTabs[1].classList.add('active');
+      if (screenNum === 5 && bottomTabs[2]) bottomTabs[2].classList.add('active');
+      if (screenNum === 7 && bottomTabs[3]) bottomTabs[3].classList.add('active');
+      if (screenNum === 10 && bottomTabs[4]) bottomTabs[4].classList.add('active');
+    }
+
+    function setTabActive(el) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function setSeg(el) {
+      el.parentElement.querySelectorAll('.seg-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // ══ HIGH-PRECISION 3D CANVAS CLOCK ENGINE (MATCHING media_1789841983545.png) ══
+    function initClockCanvas() {
+      const canvas = document.getElementById('clockCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      function renderFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!state.isPaused) {
+          state.rotationAngle += 0.008;
+        }
+
+        const baseRadius = 110;
+
+        // 1. Outer Faceted Crystal Glass Ring with Chamfered Segments
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // Ambient dark body of crystal ring
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius + 24, 0, Math.PI * 2);
+        ctx.lineWidth = 26;
+        ctx.strokeStyle = "rgba(22, 28, 36, 0.75)";
+        ctx.stroke();
+
+        // Faceted crystal refractive blocks (16 chamfered segments)
+        const numSegments = 16;
+        for (let i = 0; i < numSegments; i++) {
+          const segAngle = (i / numSegments) * Math.PI * 2 + state.rotationAngle * 0.5;
+          const arcLen = (Math.PI * 2 / numSegments) * 0.75;
+          
+          ctx.beginPath();
+          ctx.arc(0, 0, baseRadius + 24, segAngle, segAngle + arcLen);
+          ctx.lineWidth = 18;
+          ctx.strokeStyle = (i % 2 === 0) 
+            ? "rgba(255, 255, 255, 0.35)" 
+            : "rgba(255, 255, 255, 0.08)";
+          ctx.lineCap = "butt";
+          ctx.stroke();
+        }
+
+        // Outer white specular rim glints (at 45° and 225°)
+        const gradGlint = ctx.createLinearGradient(-120, -120, 120, 120);
+        gradGlint.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+        gradGlint.addColorStop(0.3, "rgba(255, 255, 255, 0.1)");
+        gradGlint.addColorStop(0.7, "rgba(255, 255, 255, 0.05)");
+        gradGlint.addColorStop(1, "rgba(255, 255, 255, 0.85)");
+
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius + 36, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = gradGlint;
+        ctx.stroke();
+
+        // 2. Glowing Neon Orange Power Arc Segments (matching poster)
+        ctx.shadowColor = "#FF6B35";
+        ctx.shadowBlur = 24;
+
+        // Main upper-right sweeping arc (~140 degrees)
+        const orangeStart = -Math.PI * 0.6 + state.rotationAngle;
+        const orangeEnd = Math.PI * 0.3 + state.rotationAngle;
+
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius + 14, orangeStart, orangeEnd);
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = "#FF6B35";
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        // Secondary glowing arc segment at bottom-left
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius + 14, orangeEnd + 0.9, orangeEnd + 1.8);
+        ctx.lineWidth = 7;
+        ctx.strokeStyle = "#FFA24C";
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        // Reset shadow
+        ctx.shadowBlur = 0;
+
+        // 3. Inner Dark Stepped Track with tick marks
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius + 2, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.stroke();
+
+        ctx.restore();
+
+        requestAnimationFrame(renderFrame);
+      }
+
+      renderFrame();
+    }
+
+    // Tick Timer loop
+    function startTimerLoop() {
+      setInterval(() => {
+        if (!state.isPaused) {
+          state.secondsElapsed++;
+          updateTimerDisplays();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplays() {
+      const timeStr = fmtTime(state.secondsElapsed);
+      const earned = (state.secondsElapsed / 3600) * state.hourlyRate;
+      const moneyStr = fmtMoney(earned);
+
+      // Screen 1
+      const e1 = document.getElementById('liveTimerDigits');
+      if (e1) e1.innerText = timeStr;
+      const e2 = document.getElementById('activeEarnings');
+      if (e2) e2.innerText = moneyStr;
+
+      // Screen 3
+      const e3 = document.getElementById('focoTimerDigits');
+      if (e3) e3.innerText = timeStr;
+      const e4 = document.getElementById('focoEarnings');
+      if (e4) e4.innerText = moneyStr;
+    }
+
+    function togglePauseClock(btn) {
+      state.isPaused = !state.isPaused;
+      const torus = document.getElementById('torus3D');
+      if (torus) torus.classList.toggle('paused', state.isPaused);
+
+      const pauseIcon = document.getElementById('pauseIcon');
+      if (pauseIcon) pauseIcon.innerText = state.isPaused ? '▶' : '||';
+    }
+
+    function toggleLivePause(btn) {
+      state.isPaused = !state.isPaused;
+      if (btn) btn.innerText = state.isPaused ? '▶ Retomar' : '⏸ Pausar';
+      const torus = document.getElementById('torus3D');
+      if (torus) torus.classList.toggle('paused', state.isPaused);
+    }
+
+    // ══ CLIENT REPORT, GENERAL REPORT & PDF FUNCTIONALITY ══
+    function formatDateBR(isoStr) {
+      if (!isoStr) return '';
+      const parts = isoStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+      }
+      return isoStr;
+    }
+
+    function calculateDaysBetween(fromIso, toIso) {
+      const p1 = (fromIso || '2026-09-01').split('-').map(Number);
+      const p2 = (toIso || '2026-09-19').split('-').map(Number);
+      const d1 = new Date(p1[0], p1[1] - 1, p1[2]);
+      const d2 = new Date(p2[0], p2[1] - 1, p2[2]);
+      const diffMs = d2 - d1;
+      const days = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+      return Math.max(1, isNaN(days) ? 1 : days);
+    }
+
+    function getShortcutDates(type) {
+      const baseYear = 2026;
+      const baseMonth = 8; // September (0-indexed: 8 is September)
+      const baseDay = 19;
+      const endDate = new Date(baseYear, baseMonth, baseDay);
+
+      function toIso(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+
+      if (type === 7) {
+        const startDate = new Date(baseYear, baseMonth, baseDay - 6);
+        return { from: toIso(startDate), to: toIso(endDate) };
+      }
+      if (type === 15) {
+        const startDate = new Date(baseYear, baseMonth, baseDay - 14);
+        return { from: toIso(startDate), to: toIso(endDate) };
+      }
+      if (type === 30) {
+        const startDate = new Date(baseYear, baseMonth, baseDay - 29);
+        return { from: toIso(startDate), to: toIso(endDate) };
+      }
+      if (type === 'month') {
+        const startDate = new Date(baseYear, baseMonth, 1);
+        return { from: toIso(startDate), to: toIso(endDate) };
+      }
+      return { from: '2026-09-01', to: '2026-09-19' };
+    }
+
+    function getCurrentClientRate() {
+      const cl = state.clients.find(c => c.name === state.selectedClient);
+      return cl ? cl.rate : (state.hourlyRate || 170.00);
+    }
+
+    function switchClientSubTab(subTab) {
+      document.getElementById('clientSubTabOverview').style.display = subTab === 'overview' ? 'block' : 'none';
+      document.getElementById('clientSubTabProjects').style.display = subTab === 'projects' ? 'block' : 'none';
+      document.getElementById('clientSubTabReport').style.display = subTab === 'report' ? 'block' : 'none';
+      if (subTab === 'report') {
+        updateClientReportPeriod(state.clientReportPeriodMode || 'mes');
+      }
+    }
+
+    function updateClientReportPeriod(period) {
+      state.clientReportPeriodMode = period;
+      const header = document.getElementById('clientReportPeriodHeader');
+      const hours = document.getElementById('clientReportHours');
+      const earn = document.getElementById('clientReportEarnings');
+      const card = document.getElementById('clientPeriodCard');
+
+      if (period === 'semana') {
+        if (card) card.style.display = 'none';
+        if (header) header.innerHTML = '‹ &nbsp; Semana Atual (14 a 20 de Setembro) &nbsp; ›';
+        const rate = getCurrentClientRate();
+        const totalMins = 405; // 06h 45m
+        if (hours) hours.innerText = '06h 45m';
+        if (earn) earn.innerText = fmtMoney((totalMins / 60) * rate);
+      } else if (period === 'mes') {
+        if (card) card.style.display = 'none';
+        if (header) header.innerHTML = '‹ &nbsp; Setembro de 2026 &nbsp; ›';
+        const rate = getCurrentClientRate();
+        const totalMins = 1100; // 18h 20m
+        if (hours) hours.innerText = '18h 20m';
+        if (earn) earn.innerText = fmtMoney((totalMins / 60) * rate);
+      } else {
+        // PERÍODO SELECIONADO INTERATIVO (NÃO MOSTRAR "Todo o Histórico do Cliente"!)
+        if (card) {
+          card.style.display = 'block';
+          if (window.gsap) {
+            gsap.fromTo(card, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.22, ease: "power4.out" });
+          }
+        }
+        const fromEl = document.getElementById('clientDateFrom');
+        const toEl = document.getElementById('clientDateTo');
+        if (fromEl) fromEl.value = state.clientPeriodFrom;
+        if (toEl) toEl.value = state.clientPeriodTo;
+        recalcClientPeriodReport();
+      }
+      syncClientReportToPdf();
+    }
+
+    function applyClientPeriodShortcut(type, btn) {
+      const dates = getShortcutDates(type);
+      state.clientPeriodFrom = dates.from;
+      state.clientPeriodTo = dates.to;
+
+      const fromEl = document.getElementById('clientDateFrom');
+      const toEl = document.getElementById('clientDateTo');
+      if (fromEl) fromEl.value = dates.from;
+      if (toEl) toEl.value = dates.to;
+
+      const card = document.getElementById('clientPeriodCard');
+      if (card) {
+        card.querySelectorAll('.chip-btn').forEach(c => c.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+      }
+
+      recalcClientPeriodReport();
+      syncClientReportToPdf();
+    }
+
+    function onClientDateRangeChange() {
+      const fromEl = document.getElementById('clientDateFrom');
+      const toEl = document.getElementById('clientDateTo');
+      if (!fromEl || !toEl) return;
+
+      let f = fromEl.value || '2026-09-01';
+      let t = toEl.value || '2026-09-19';
+
+      if (f > t) {
+        const temp = f; f = t; t = temp;
+        fromEl.value = f; toEl.value = t;
+      }
+
+      state.clientPeriodFrom = f;
+      state.clientPeriodTo = t;
+
+      updateChipActiveState('clientPeriodCard', f, t);
+      recalcClientPeriodReport();
+      syncClientReportToPdf();
+    }
+
+    function recalcClientPeriodReport() {
+      const days = calculateDaysBetween(state.clientPeriodFrom, state.clientPeriodTo);
+      const badge = document.getElementById('clientPeriodDaysBadge');
+      if (badge) badge.innerText = `${days} ${days === 1 ? 'dia' : 'dias'}`;
+
+      const header = document.getElementById('clientReportPeriodHeader');
+      if (header) {
+        header.innerHTML = `‹ &nbsp; ${formatDateBR(state.clientPeriodFrom)} até ${formatDateBR(state.clientPeriodTo)} &nbsp; ›`;
+      }
+
+      // Cálculo dinâmico: média de ~57.89 minutos faturáveis por dia
+      const totalMins = Math.max(30, Math.round(days * 57.8947));
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      const hoursFormatted = `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+
+      const rate = getCurrentClientRate();
+      const earnings = (totalMins / 60) * rate;
+      const earningsFormatted = fmtMoney(earnings);
+
+      const hoursEl = document.getElementById('clientReportHours');
+      const earnEl = document.getElementById('clientReportEarnings');
+      if (hoursEl) hoursEl.innerText = hoursFormatted;
+      if (earnEl) earnEl.innerText = earningsFormatted;
+
+      const rateEl = document.getElementById('clientReportBaseRate');
+      if (rateEl) rateEl.innerText = `${fmtMoney(rate)}/h`;
+    }
+
+    // ══ GENERAL REPORTS (TELA 7) ══
+    function updateGeneralReportPeriod(period) {
+      state.generalReportPeriodMode = period;
+      const header = document.getElementById('generalReportPeriodHeader');
+      const hours = document.getElementById('generalReportHours');
+      const earn = document.getElementById('generalReportEarnings');
+      const card = document.getElementById('generalPeriodCard');
+
+      if (period === 'semana') {
+        if (card) card.style.display = 'none';
+        if (header) header.innerHTML = '‹ &nbsp; Semana Atual (14 a 20 de Setembro) &nbsp; ›';
+        if (hours) hours.innerText = '11h 25m';
+        if (earn) earn.innerText = 'R$ 2.035,00';
+      } else if (period === 'mes') {
+        if (card) card.style.display = 'none';
+        if (header) header.innerHTML = '‹ &nbsp; Setembro de 2026 &nbsp; ›';
+        if (hours) hours.innerText = '32h 47m';
+        if (earn) earn.innerText = 'R$ 5.842,30';
+      } else {
+        if (card) {
+          card.style.display = 'block';
+          if (window.gsap) {
+            gsap.fromTo(card, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.22, ease: "power4.out" });
+          }
+        }
+        const fromEl = document.getElementById('generalDateFrom');
+        const toEl = document.getElementById('generalDateTo');
+        if (fromEl) fromEl.value = state.generalPeriodFrom;
+        if (toEl) toEl.value = state.generalPeriodTo;
+        recalcGeneralPeriodReport();
+      }
+    }
+
+    function applyGeneralPeriodShortcut(type, btn) {
+      const dates = getShortcutDates(type);
+      state.generalPeriodFrom = dates.from;
+      state.generalPeriodTo = dates.to;
+
+      const fromEl = document.getElementById('generalDateFrom');
+      const toEl = document.getElementById('generalDateTo');
+      if (fromEl) fromEl.value = dates.from;
+      if (toEl) toEl.value = dates.to;
+
+      const card = document.getElementById('generalPeriodCard');
+      if (card) {
+        card.querySelectorAll('.chip-btn').forEach(c => c.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+      }
+
+      recalcGeneralPeriodReport();
+    }
+
+    function onGeneralDateRangeChange() {
+      const fromEl = document.getElementById('generalDateFrom');
+      const toEl = document.getElementById('generalDateTo');
+      if (!fromEl || !toEl) return;
+
+      let f = fromEl.value || '2026-09-01';
+      let t = toEl.value || '2026-09-19';
+
+      if (f > t) {
+        const temp = f; f = t; t = temp;
+        fromEl.value = f; toEl.value = t;
+      }
+
+      state.generalPeriodFrom = f;
+      state.generalPeriodTo = t;
+
+      updateChipActiveState('generalPeriodCard', f, t);
+      recalcGeneralPeriodReport();
+    }
+
+    function recalcGeneralPeriodReport() {
+      const days = calculateDaysBetween(state.generalPeriodFrom, state.generalPeriodTo);
+      const badge = document.getElementById('generalPeriodDaysBadge');
+      if (badge) badge.innerText = `${days} ${days === 1 ? 'dia' : 'dias'}`;
+
+      const header = document.getElementById('generalReportPeriodHeader');
+      if (header) {
+        header.innerHTML = `‹ &nbsp; ${formatDateBR(state.generalPeriodFrom)} até ${formatDateBR(state.generalPeriodTo)} &nbsp; ›`;
+      }
+
+      // Cálculo dinâmico geral: ~103.53 minutos por dia
+      const totalMins = Math.max(60, Math.round(days * 103.5263));
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      const hoursFormatted = `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+
+      const earnings = (totalMins / 60) * 178.209;
+      const earningsFormatted = fmtMoney(earnings);
+
+      const hoursEl = document.getElementById('generalReportHours');
+      const earnEl = document.getElementById('generalReportEarnings');
+      if (hoursEl) hoursEl.innerText = hoursFormatted;
+      if (earnEl) earnEl.innerText = earningsFormatted;
+    }
+
+    function updateChipActiveState(cardId, fromVal, toVal) {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+      const chips = card.querySelectorAll('.chip-btn');
+      chips.forEach(c => c.classList.remove('active'));
+
+      const s7 = getShortcutDates(7);
+      const s15 = getShortcutDates(15);
+      const s30 = getShortcutDates(30);
+      const sMonth = getShortcutDates('month');
+
+      if (fromVal === s7.from && toVal === s7.to && chips[0]) chips[0].classList.add('active');
+      else if (fromVal === s15.from && toVal === s15.to && chips[1]) chips[1].classList.add('active');
+      else if (fromVal === s30.from && toVal === s30.to && chips[2]) chips[2].classList.add('active');
+      else if (fromVal === sMonth.from && toVal === sMonth.to && chips[3]) chips[3].classList.add('active');
+    }
+
+    // ══ COMPANY DATA & LOGO UPLOAD (TELA 10 & PDF SYNC) ══
+    function handleLogoUpload(input) {
+      if (!input || !input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        state.company.logoUrl = e.target.result;
+        try {
+          localStorage.setItem('tempotrack_company', JSON.stringify(state.company));
+        } catch (err) {
+          console.warn('LocalStorage error:', err);
+        }
+        updateCompanyUI();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeCompanyLogo() {
+      state.company.logoUrl = null;
+      try {
+        localStorage.setItem('tempotrack_company', JSON.stringify(state.company));
+      } catch (err) {
+        console.warn('LocalStorage error:', err);
+      }
+      const fileInput = document.getElementById('companyLogoFileInput');
+      if (fileInput) fileInput.value = '';
+      updateCompanyUI();
+    }
+
+    function saveCompanyData() {
+      const nameInput = document.getElementById('companyNameInput');
+      const cnpjInput = document.getElementById('companyCnpjInput');
+      const phoneInput = document.getElementById('companyPhoneInput');
+      const pixInput = document.getElementById('companyPixInput');
+      const emailInput = document.getElementById('companyEmailInput');
+
+      if (nameInput) state.company.name = nameInput.value.trim();
+      if (cnpjInput) state.company.cnpj = cnpjInput.value.trim();
+      if (phoneInput) state.company.phone = phoneInput.value.trim();
+      if (pixInput) state.company.pix = pixInput.value.trim();
+      if (emailInput) state.company.email = emailInput.value.trim();
+
+      try {
+        localStorage.setItem('tempotrack_company', JSON.stringify(state.company));
+      } catch (err) {
+        console.warn('LocalStorage error:', err);
+      }
+
+      updateCompanyUI();
+
+      // Immediate visual feedback on the button
+      const btn = document.getElementById('saveCompanyBtn');
+      if (btn) {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '✓ Dados Salvos com Sucesso!';
+        btn.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+        btn.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.4)';
+        if (window.gsap) {
+          gsap.fromTo(btn, { scale: 0.96 }, { scale: 1, duration: 0.22, ease: "power4.out" });
+        }
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.style.background = '';
+          btn.style.boxShadow = '';
+          if (window.gsap) {
+            gsap.fromTo(btn, { scale: 0.98 }, { scale: 1, duration: 0.2, ease: "power4.out" });
+          }
+        }, 2000);
+      }
+    }
+
+    function initCompanyFields() {
+      const nameInput = document.getElementById('companyNameInput');
+      const cnpjInput = document.getElementById('companyCnpjInput');
+      const phoneInput = document.getElementById('companyPhoneInput');
+      const pixInput = document.getElementById('companyPixInput');
+      const emailInput = document.getElementById('companyEmailInput');
+
+      if (nameInput) nameInput.value = state.company.name || '';
+      if (cnpjInput) cnpjInput.value = state.company.cnpj || '';
+      if (phoneInput) phoneInput.value = state.company.phone || '';
+      if (pixInput) pixInput.value = state.company.pix || '';
+      if (emailInput) emailInput.value = state.company.email || '';
+    }
+
+    function updateCompanyUI() {
+      // Screen 10 Logo Preview
+      const logoPreview = document.getElementById('companyLogoPreview');
+      const logoPlaceholder = document.getElementById('companyLogoPlaceholder');
+      const removeBtn = document.getElementById('removeLogoBtn');
+
+      if (state.company.logoUrl) {
+        if (logoPreview) {
+          logoPreview.src = state.company.logoUrl;
+          logoPreview.style.display = 'block';
+        }
+        if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+        if (removeBtn) removeBtn.style.display = 'inline-block';
+      } else {
+        if (logoPreview) {
+          logoPreview.src = '';
+          logoPreview.style.display = 'none';
+        }
+        if (logoPlaceholder) logoPlaceholder.style.display = 'block';
+        if (removeBtn) removeBtn.style.display = 'none';
+      }
+
+      // Sync with PDF Modal
+      syncCompanyToPdf();
+    }
+
+    function syncCompanyToPdf() {
+      const pdfLogo = document.getElementById('pdfCompanyLogoImg');
+      if (pdfLogo) {
+        if (state.company.logoUrl) {
+          pdfLogo.src = state.company.logoUrl;
+          pdfLogo.style.display = 'block';
+        } else {
+          pdfLogo.style.display = 'none';
+        }
+      }
+
+      const pdfTitle = document.getElementById('pdfClientCompanyTitle');
+      if (pdfTitle) {
+        pdfTitle.innerText = `${state.company.name || 'TempoTrack Pro'} • Relatório Editorial`;
+      }
+
+      const pdfCnpjPix = document.getElementById('pdfCompanyCnpjPix');
+      if (pdfCnpjPix) {
+        const parts = [];
+        if (state.company.cnpj) parts.push(`CNPJ: ${state.company.cnpj}`);
+        if (state.company.phone) parts.push(`Tel: ${state.company.phone}`);
+        if (state.company.pix) parts.push(`Chave Pix: ${state.company.pix}`);
+        pdfCnpjPix.innerText = parts.join(' • ') || 'CNPJ / Pix não informados';
+      }
+    }
+
+    function syncClientReportToPdf() {
+      const clientName = state.selectedClient || 'Domsul';
+      const metaSubtitle = document.getElementById('pdfMetaSubtitle');
+      const pdfHours = document.getElementById('pdfModalHours');
+      const pdfEarnings = document.getElementById('pdfModalEarnings');
+
+      let periodStr = '01/09/2026 a 19/09/2026';
+      if (state.clientReportPeriodMode === 'periodo') {
+        periodStr = `${formatDateBR(state.clientPeriodFrom)} a ${formatDateBR(state.clientPeriodTo)}`;
+      } else if (state.clientReportPeriodMode === 'semana') {
+        periodStr = '14/09/2026 a 20/09/2026';
+      } else {
+        periodStr = '01/09/2026 a 19/09/2026';
+      }
+
+      if (metaSubtitle) {
+        metaSubtitle.innerText = `Cliente: ${clientName} • Período: ${periodStr}`;
+      }
+
+      const clientHoursEl = document.getElementById('clientReportHours');
+      const clientEarnEl = document.getElementById('clientReportEarnings');
+
+      if (pdfHours && clientHoursEl) pdfHours.innerText = clientHoursEl.innerText;
+      if (pdfEarnings && clientEarnEl) pdfEarnings.innerText = clientEarnEl.innerText;
+    }
+
+    function openClientPdfModal() {
+      syncCompanyToPdf();
+      syncClientReportToPdf();
+      document.getElementById('clientPdfModal').classList.add('open');
+    }
+
+    function openAddClientModal() { document.getElementById('addClientModal').classList.add('open'); }
+    function openAddProjectModal() { document.getElementById('addProjectModal').classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function saveNewClient() {
+      const name = document.getElementById('modalClientName').value.trim();
+      const cat = document.getElementById('modalClientCategory').value.trim() || 'Tecnologia';
+      const rate = parseFloat(document.getElementById('modalClientRate').value) || 170.0;
+      if (!name) { alert('Informe o nome do cliente.'); return; }
+
+      const newC = { id: Date.now(), name, category: cat, rate, badge: name[0].toUpperCase(), color: 'badge-orange' };
+      state.clients.unshift(newC);
+      closeModal('addClientModal');
+
+      // Update Screen 6
+      document.getElementById('clientDetailName').innerText = name;
+      document.getElementById('clientDetailCategory').innerText = cat;
+      document.getElementById('clientDetailAvatar').innerText = name[0].toUpperCase();
+      renderClients();
+      morphToScreen(6);
+      alert(`Cliente "${name}" cadastrado com sucesso!`);
+    }
+
+    function saveNewProject() {
+      const name = document.getElementById('modalProjName').value.trim();
+      if (!name) { alert('Informe o nome do projeto.'); return; }
+      closeModal('addProjectModal');
+      morphToScreen(5);
+      alert(`Projeto "${name}" adicionado com sucesso!`);
+    }
+
+    function toggleProjetosTab(tab) {
+      document.getElementById('projetosTabAtivos').style.display = tab === 'ativos' ? 'block' : 'none';
+      document.getElementById('projetosTabClientes').style.display = tab === 'clientes' ? 'block' : 'none';
+      if (tab === 'clientes') renderClients();
+    }
+
+    function renderClients() {
+      const container = document.getElementById('dynamicClientList');
+      if (!container) return;
+      container.innerHTML = state.clients.map(c => `
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="selectClient('${c.name}', '${c.category}', '${c.badge}')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="badge-square ${c.color}">${c.badge}</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;">${c.name}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${c.category} • R$ ${c.rate.toFixed(2)}/h</div>
+            </div>
+          </div>
+          <span style="font-size:12px;color:var(--text-dim);">›</span>
+        </div>
+      `).join('');
+    }
+
+    function selectClient(name, category, badge) {
+      state.selectedClient = name;
+      const cl = state.clients.find(c => c.name === name);
+      if (cl) state.hourlyRate = cl.rate;
+      document.getElementById('clientDetailName').innerText = name;
+      document.getElementById('clientDetailCategory').innerText = category;
+      document.getElementById('clientDetailAvatar').innerText = badge;
+      const rateEl = document.getElementById('clientReportBaseRate');
+      if (rateEl) rateEl.innerText = `${fmtMoney(cl ? cl.rate : 170.00)}/h`;
+      recalcClientPeriodReport();
+      syncClientReportToPdf();
+      morphToScreen(6);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initClockCanvas();
+      startTimerLoop();
+      updateTimerDisplays();
+      renderClients();
+      initCompanyFields();
+      updateCompanyUI();
+      recalcClientPeriodReport();
+      syncClientReportToPdf();
+    });
+  </script>
 </body>
 </html>

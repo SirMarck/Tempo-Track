@@ -28,4 +28,26 @@ object FormatUtils {
         val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
+
+    /**
+     * Aplica regra de arredondamento de faturamento (5/10/15/30 min) apenas no cálculo de valor,
+     * preservando a duração real armazenada sem adulteração.
+     */
+    fun calculateBillableDurationMillis(rawDurationMillis: Long, roundingMinutes: Int): Long {
+        if (roundingMinutes <= 0) return rawDurationMillis
+        val intervalMillis = roundingMinutes * 60 * 1000L
+        val remainder = rawDurationMillis % intervalMillis
+        return if (remainder == 0L) rawDurationMillis else rawDurationMillis + (intervalMillis - remainder)
+    }
+
+    /**
+     * Resolução de taxa efetiva conforme prioridade do Guia v2:
+     * Taxa do Projeto -> Taxa padrão do Cliente -> Taxa Global
+     */
+    fun resolveEffectiveRate(projectRate: Double?, clientRate: Double, globalRate: Double = 0.0): Double {
+        return projectRate?.takeIf { it > 0.0 }
+            ?: clientRate.takeIf { it > 0.0 }
+            ?: globalRate
+    }
 }
+

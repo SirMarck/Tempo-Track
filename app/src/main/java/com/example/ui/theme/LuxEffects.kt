@@ -1,5 +1,6 @@
 package com.example.ui.theme
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -9,57 +10,49 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-// ─── Glassmorphism border ─────────────────────────────────────────────────────
-// Thin gradient border that simulates a glass edge. Use on cards & dialogs.
-fun Modifier.luxBorder(shape: Shape): Modifier = this.border(
-    width = 1.dp,
-    brush = Brush.linearGradient(
-        0.0f to Color.White.copy(alpha = 0.18f),
-        0.3f to Color.White.copy(alpha = 0.06f),
-        0.7f to Color.Transparent,
-        1.0f to Color.White.copy(alpha = 0.10f)
-    ),
-    shape = shape
+// ─── Gradiente de Superfície Padrão (Tech Sóbrio Chumbo/Grafite) ─────────────
+val tempoSurfaceGradient = Brush.verticalGradient(
+    0.0f to Color(0xFF1C2027),
+    1.0f to Color(0xFF171A21)
 )
 
-// ─── Orange glow border ───────────────────────────────────────────────────────
-// Highlights the active-session card or primary CTA cards.
-fun Modifier.orangeGlowBorder(shape: Shape, width: Dp = 1.dp): Modifier = this.border(
-    width = width,
-    brush = Brush.linearGradient(
-        0.0f to VaultoPrimary.copy(alpha = 0.80f),
-        0.5f to VaultoPrimary.copy(alpha = 0.25f),
-        1.0f to VaultoPrimary.copy(alpha = 0.60f)
-    ),
-    shape = shape
+val tempoElevatedGradient = Brush.verticalGradient(
+    0.0f to Color(0xFF20252D),
+    1.0f to Color(0xFF191C23)
 )
 
-// ─── Green glow border ────────────────────────────────────────────────────────
-// Used on earnings / timer elements.
-fun Modifier.greenGlowBorder(shape: Shape, width: Dp = 1.dp): Modifier = this.border(
-    width = width,
-    brush = Brush.linearGradient(
-        0.0f to VaultoSecondary.copy(alpha = 0.80f),
-        0.5f to VaultoSecondary.copy(alpha = 0.25f),
-        1.0f to VaultoSecondary.copy(alpha = 0.60f)
-    ),
-    shape = shape
-)
+// Highlight de material suave sem borda dura visível (reflexo mínimo de luz no topo)
+fun Modifier.tempoMaterialHighlight(shape: Shape): Modifier = this.drawWithContent {
+    drawContent()
+    drawRect(
+        brush = Brush.verticalGradient(
+            0.0f to Color.White.copy(alpha = 0.04f),
+            0.05f to Color.Transparent
+        )
+    )
+}
 
-// ─── Subtle background gradient sweep ────────────────────────────────────────
-// Apply on the root Scaffold background for a barely-visible depth effect.
+// ─── Compatibilidade com telas legadas (sem bordas) ───────────────────────────
+fun Modifier.luxBorder(shape: Shape): Modifier = this.tempoMaterialHighlight(shape)
+
+// Glow controlado sem borda sólida
+fun Modifier.orangeGlowBorder(shape: Shape, width: Dp = 1.dp): Modifier = this.tempoMaterialHighlight(shape)
+
+// Highlight suave para estados de sucesso/concluído sem borda sólida
+fun Modifier.greenGlowBorder(shape: Shape, width: Dp = 1.dp): Modifier = this.tempoMaterialHighlight(shape)
+
+// Fundo padrão chumbo com leve transição de profundidade
 val vaultoBackgroundBrush = Brush.verticalGradient(
-    0.0f to Color(0xFF0A0B0E),
-    0.4f to Color(0xFF0D0F13),
-    1.0f to Color(0xFF080A0D),
+    0.0f to TempoBgBase,
+    0.6f to TempoBgDeep,
+    1.0f to TempoBgBase
 )
 
-// ─── Grain effect (kept for compatibility) ───────────────────────────────────
 val grainBrush: Brush = Brush.verticalGradient(
     colors = listOf(
-        Color.White.copy(alpha = 0.008f),
+        Color.White.copy(alpha = 0.004f),
         Color.Transparent,
-        Color.Black.copy(alpha = 0.015f)
+        Color.Black.copy(alpha = 0.01f)
     )
 )
 
@@ -68,7 +61,7 @@ fun Modifier.grainEffect() = drawWithContent {
     drawRect(brush = grainBrush, size = size)
 }
 
-// Legacy alias kept so existing call-sites compile without changes
 object LuxEffects {
     val grainBrush = com.example.ui.theme.grainBrush
 }
+

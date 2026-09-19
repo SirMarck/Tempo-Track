@@ -2,36 +2,55 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ─── Vaulto Dark Palette ──────────────────────────────────────────────────────
+// ─── Design System: Tech Sóbrio (TempoTrack Guia de Redesign v2) ─────────────
 
-// Backgrounds / Surfaces
-val VaultoBg          = Color(0xFF0A0B0E) // Obsidian black
-val VaultoSurface     = Color(0xFF121317) // Elevated surface
-val VaultoSurfaceVar  = Color(0xFF191B22) // Card / dialog surface
-val VaultoOutline     = Color(0xFF1E2028) // Subtle divider
+// Backgrounds & Superfícies (Cinza Chumbo / Grafite Sóbrio)
+val TempoBgBase         = Color(0xFF15181D) // Fundo principal; cinza grafite do pôster
+val TempoBgDeep         = Color(0xFF171B21) // Variação para gradientes de profundidade
+val TempoSurface1       = Color(0xFF1C2027) // Superfície discreta; listas e agrupamentos
+val TempoSurface2       = Color(0xFF20252D) // Elementos elevados e controles
+val TempoSurface3       = Color(0xFF262B34) // Estados selecionados sem borda
+val TempoOutline        = Color(0xFF1E232B) // Divisores e highlights quase invisíveis
 
-// Primary — Electric Orange (action, CTA, FAB)
-val VaultoPrimary       = Color(0xFFFF5E2B)
-val VaultoOnPrimary     = Color(0xFFFFFFFF)
-val VaultoPrimaryContainer    = Color(0xFF2A1208)
-val VaultoOnPrimaryContainer  = Color(0xFFFFCCB8)
+// Tipografia e Conteúdo
+val TempoTextPrimary    = Color(0xFFF2F0EB) // Títulos, números, informação principal
+val TempoTextSecondary  = Color(0xFFA9AFB5) // Descrição e metadados
+val TempoTextMuted      = Color(0xFF747C84) // Informação terciária
 
-// Secondary — Neon Emerald (timer, earnings, live stats)
-val VaultoSecondary       = Color(0xFF00F29D)
-val VaultoOnSecondary     = Color(0xFF002619)
-val VaultoSecondaryContainer    = Color(0xFF003D26)
-val VaultoOnSecondaryContainer  = Color(0xFFB0FFE0)
+// Accent (Laranja Queimado Controlado)
+val TempoAccent         = Color(0xFFE46F43) // Ação principal e estado ativo
+val TempoAccentSoft     = Color(0xFFB95736) // Estados menos intensos
+val TempoAccentGlow     = Color(0x1FE46F43) // Brilho local muito sutil (~12% opacidade)
+val TempoAccentContainer= Color(0xFF261814) // Container de accent escuro
 
-// Text
-val VaultoOnBg          = Color(0xFFE8E9F0)
-val VaultoOnSurface     = Color(0xFFDDE0EB)
-val VaultoOnSurfaceVar  = Color(0xFF8B90A8)
+// Estados Funcionais Sóbrios (Sem neon)
+val TempoSuccess        = Color(0xFF5F987A) // Pago, concluído, dentro da meta
+val TempoWarning        = Color(0xFFBE9663) // Atenção, limite próximo
+val TempoDanger         = Color(0xFFB85A5A) // Excluir, erro, estourado
 
-// Status
-val VaultoError         = Color(0xFFFF5252)
-val VaultoOnError       = Color(0xFFFFFFFF)
+// ─── Aliases de Compatibilidade (mantém telas existentes compilando) ──────────
+val VaultoBg                 = TempoBgBase
+val VaultoSurface            = TempoSurface1
+val VaultoSurfaceVar         = TempoSurface2
+val VaultoOutline            = TempoOutline
 
-// Accent highlights (used in badges, glow, borders)
-val VaultoGlow          = Color(0x33FF5E2B) // Orange glow overlay
-val VaultoGlowGreen     = Color(0x2200F29D) // Green glow overlay
-val VaultoGlassStroke   = Color(0x26FFFFFF) // Glassmorphism border
+val VaultoPrimary            = TempoAccent
+val VaultoOnPrimary          = Color(0xFFFFFFFF)
+val VaultoPrimaryContainer   = TempoAccentContainer
+val VaultoOnPrimaryContainer = Color(0xFFFFD5C7)
+
+val VaultoSecondary          = TempoSuccess       // Substitui antigo verde neon por tom sóbrio
+val VaultoOnSecondary        = Color(0xFF0E1A14)
+val VaultoSecondaryContainer = Color(0xFF14241B)
+val VaultoOnSecondaryContainer = Color(0xFFD0EBE0)
+
+val VaultoOnBg               = TempoTextPrimary
+val VaultoOnSurface          = TempoTextPrimary
+val VaultoOnSurfaceVar       = TempoTextSecondary
+
+val VaultoError              = TempoDanger
+val VaultoOnError            = Color(0xFFFFFFFF)
+
+val VaultoGlow               = TempoAccentGlow
+val VaultoGlowGreen          = Color(0x185F987A)
+val VaultoGlassStroke        = Color(0x0DFFFFFF) // Highlight sutil 5%, sem borda pesada

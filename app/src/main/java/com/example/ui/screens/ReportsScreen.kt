@@ -32,6 +32,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.data.gemini.ClientSummaryData
 import com.example.viewmodel.GeminiAnalysisState
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import com.example.ui.theme.*
 import com.example.ui.theme.luxBorder
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -317,7 +322,7 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(reportData.keys.toList()) { client ->
-                        ClientReportCard(client, reportData[client]!!, filterLabel)
+                        ClientReportCard(client, reportData[client]!!, filterLabel, viewModel)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
@@ -401,100 +406,189 @@ fun ReportsScreen(viewModel: TimeTrackerViewModel) {
 }
 
 @Composable
-fun ClientReportCard(client: Client, sessions: List<Session>, monthName: String) {
+fun ClientReportCard(
+    client: Client,
+    sessions: List<Session>,
+    monthName: String,
+    viewModel: TimeTrackerViewModel
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var totalDuration = 0L
+    var totalBillableDuration = 0L
     var totalGrossValue = 0.0
     var totalDiscountValue = 0.0
-    
-    sessions.forEach { session ->
-        val duration = maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
-        val originalValue = (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
+
+    val sortedSessions = remember(sessions) { sessions.sortedBy { it.startTime } }
+
+    sortedSessions.forEach { session ->
+        val duration = session.calculateDurationMillis()
+        val effectiveRate = if (session.appliedRate > 0.0) session.appliedRate else client.hourlyRate
+        val originalValue = if (session.billable) (duration.toDouble() / (1000 * 60 * 60)) * effectiveRate else 0.0
         val discountPctVal = originalValue * (session.discountPercentage / 100.0)
         val totalDiscount = discountPctVal + session.discountValue
-        
+
         totalDuration += duration
-        totalGrossValue += originalValue
-        totalDiscountValue += totalDiscount
+        if (session.billable) {
+            totalBillableDuration += duration
+            totalGrossValue += originalValue
+            totalDiscountValue += totalDiscount
+        }
     }
     val totalNetValue = maxOf(0.0, totalGrossValue - totalDiscountValue)
+    val unbilledCount = sessions.count { it.closingBatchId == null && it.billable }
 
-    ElevatedCard(
+    var showClosingConfirm by remember { mutableStateOf(false) }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .luxBorder(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        )
+            .clip(TempoRadius.shapeMd)
+            .background(TempoSurface2)
+            .tempoMaterialHighlight(TempoRadius.shapeMd)
+            .padding(TempoSpacing.space4)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(client.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            Text("Valor da Hora: ${FormatUtils.formatCurrency(client.hourlyRate)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Total Horas:", style = MaterialTheme.typography.bodyMedium)
-                Text(FormatUtils.formatDuration(totalDuration), fontWeight = FontWeight.Bold)
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Valor Bruto:", style = MaterialTheme.typography.bodyMedium)
-                Text(FormatUtils.formatCurrency(totalGrossValue), fontWeight = FontWeight.Bold)
-            }
-            if (totalDiscountValue > 0.0) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Total Descontos:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
-                    Text("- ${FormatUtils.formatCurrency(totalDiscountValue)}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+        Column(verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)) {
+            // Header do Card
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = client.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TempoTextPrimary
+                    )
+                    Text(
+                        text = "Taxa Base: ${FormatUtils.formatCurrency(client.hourlyRate)}/h",
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = TempoMono),
+                        color = TempoTextSecondary
+                    )
                 }
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Líquido a Cobrar:", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                Text(FormatUtils.formatCurrency(totalNetValue), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Divider()
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Detalhes de Serviço:", style = MaterialTheme.typography.labelMedium)
-            sessions.sortedBy { it.startTime }.forEach { session ->
-                val duration = maxOf(0L, (session.endTime!! - session.startTime) - session.pausedDuration)
-                val originalValue = (duration.toDouble() / (1000 * 60 * 60)) * client.hourlyRate
-                val discountPctVal = originalValue * (session.discountPercentage / 100.0)
-                val totalDiscount = discountPctVal + session.discountValue
-                val finalValue = maxOf(0.0, originalValue - totalDiscount)
-                val startTimeStr = FormatUtils.formatTime(session.startTime)
-                val endTimeStr = FormatUtils.formatTime(session.endTime)
-                val pausesList = com.example.utils.ExportUtils.parsePauseEvents(session.pauseEvents)
-                
-                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(FormatUtils.formatDate(session.startTime), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                            Text(session.description, style = MaterialTheme.typography.bodySmall)
-                            Text("Início: $startTimeStr | Encerramento: $endTimeStr", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            
-                            if (pausesList.isNotEmpty()) {
-                                pausesList.forEach { pausePair ->
-                                    val pTime = FormatUtils.formatTime(pausePair.first)
-                                    val rTime = pausePair.second?.let { FormatUtils.formatTime(it) } ?: "Sem retomada"
-                                    Text(" ↳ Pausa: $pTime | Retomada: $rTime", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-                                }
-                            }
-                        }
-                        Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-                            if (totalDiscount > 0.0) {
-                                Text(
-                                    text = FormatUtils.formatCurrency(originalValue),
-                                    style = MaterialTheme.typography.bodySmall.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(FormatUtils.formatCurrency(finalValue), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        }
+
+                if (unbilledCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(TempoWarning.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "$unbilledCount a faturar",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TempoWarning,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(TempoSuccess.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "Lote faturado",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TempoSuccess,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+
+            Divider(color = TempoOutline, thickness = 0.5.dp)
+
+            // Resumo de Horas e Valores
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Total de Horas:", style = MaterialTheme.typography.bodyMedium, color = TempoTextSecondary)
+                Text(FormatUtils.formatDuration(totalDuration), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = TempoMono), color = TempoTextPrimary, fontWeight = FontWeight.Bold)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Horas Faturáveis:", style = MaterialTheme.typography.bodyMedium, color = TempoTextSecondary)
+                Text(FormatUtils.formatDuration(totalBillableDuration), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = TempoMono), color = TempoTextPrimary)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Valor Bruto:", style = MaterialTheme.typography.bodyMedium, color = TempoTextSecondary)
+                Text(FormatUtils.formatCurrency(totalGrossValue), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = TempoMono), color = TempoTextPrimary)
+            }
+            if (totalDiscountValue > 0.0) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Total Descontos:", style = MaterialTheme.typography.bodyMedium, color = TempoDanger)
+                    Text("- ${FormatUtils.formatCurrency(totalDiscountValue)}", style = MaterialTheme.typography.bodyMedium.copy(fontFamily = TempoMono), fontWeight = FontWeight.Bold, color = TempoDanger)
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Líquido a Faturar:", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = TempoTextPrimary)
+                Text(FormatUtils.formatCurrency(totalNetValue), style = MaterialTheme.typography.titleMedium.copy(fontFamily = TempoMono), fontWeight = FontWeight.Bold, color = TempoAccent)
+            }
+
+            Divider(color = TempoOutline, thickness = 0.5.dp)
+
+            // Detalhes das sessões
+            Text("Lançamentos de Serviço (${sortedSessions.size}):", style = MaterialTheme.typography.labelSmall, color = TempoTextMuted, letterSpacing = 0.5.sp)
+            sortedSessions.forEach { session ->
+                val duration = session.calculateDurationMillis()
+                val effectiveRate = if (session.appliedRate > 0.0) session.appliedRate else client.hourlyRate
+                val rawVal = if (session.billable) (duration.toDouble() / (1000 * 60 * 60)) * effectiveRate else 0.0
+                val discVal = rawVal * (session.discountPercentage / 100.0) + session.discountValue
+                val finalVal = maxOf(0.0, rawVal - discVal)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(TempoRadius.shapeSm)
+                        .background(TempoSurface1)
+                        .padding(horizontal = TempoSpacing.space3, vertical = TempoSpacing.space2),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = FormatUtils.formatDate(session.startTime) + " • " + if (session.description.isNotBlank()) session.description else "Sem descrição",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TempoTextPrimary,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        val timeSpan = "${FormatUtils.formatTime(session.startTime)} - ${session.endTime?.let { FormatUtils.formatTime(it) } ?: "..."}"
+                        Text(
+                            text = "$timeSpan • ${FormatUtils.formatDuration(duration)}" + if (!session.billable) " • Não faturável" else "",
+                            style = MaterialTheme.typography.labelSmall.copy(fontFamily = TempoMono),
+                            color = TempoTextSecondary
+                        )
+                    }
+
+                    Text(
+                        text = FormatUtils.formatCurrency(finalVal),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = TempoMono),
+                        fontWeight = FontWeight.Bold,
+                        color = if (session.billable) TempoAccent else TempoTextMuted
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(TempoSpacing.space2))
+
+            // Ações de Fechamento e Exportação
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space2),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (unbilledCount > 0) {
+                    OutlinedButton(
+                        onClick = { showClosingConfirm = true },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TempoAccent)
+                    ) {
+                        Text("Fechar Lote", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
                 OutlinedButton(
                     onClick = {
                         val file = com.example.utils.ExportUtils.generateImage(context, client, sessions, monthName)
@@ -502,21 +596,65 @@ fun ClientReportCard(client: Client, sessions: List<Session>, monthName: String)
                             com.example.utils.ExportUtils.shareFile(context, file, "image/png")
                         }
                     },
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text("Exportar IMG", style = MaterialTheme.typography.labelSmall)
                 }
+
                 Button(
                     onClick = {
                         val file = com.example.utils.ExportUtils.generatePdf(context, client, sessions, monthName)
                         if (file != null) {
                             com.example.utils.ExportUtils.shareFile(context, file, "application/pdf")
                         }
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = TempoAccent),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("Exportar PDF", style = MaterialTheme.typography.labelSmall)
+                    Text("PDF A4", style = MaterialTheme.typography.labelSmall, color = TempoBgBase, fontWeight = FontWeight.Bold)
                 }
             }
         }
+    }
+
+    if (showClosingConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClosingConfirm = false },
+            title = { Text("Fechar Lote de Cobrança?", color = TempoTextPrimary) },
+            text = {
+                Text(
+                    text = "As $unbilledCount sessões faturáveis serão vinculadas a um novo lote de fechamento. Isso organiza as faturas emitidas e protege suas taxas históricas.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TempoTextSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val sessionIds = sessions.filter { it.closingBatchId == null && it.billable }.map { it.id }
+                        val minDate = sessions.minOfOrNull { it.startTime } ?: System.currentTimeMillis()
+                        val maxDate = sessions.maxOfOrNull { it.endTime ?: it.startTime } ?: System.currentTimeMillis()
+                        viewModel.createClosingBatch(
+                            clientId = client.id,
+                            fromDate = minDate,
+                            toDate = maxDate,
+                            sessionIds = sessionIds,
+                            notes = "Fechamento $monthName"
+                        ) { batchId ->
+                            Toast.makeText(context, "Lote #$batchId criado com sucesso!", Toast.LENGTH_SHORT).show()
+                        }
+                        showClosingConfirm = false
+                    }
+                ) {
+                    Text("Confirmar", color = TempoAccent, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClosingConfirm = false }) {
+                    Text("Cancelar", color = TempoTextSecondary)
+                }
+            },
+            containerColor = TempoSurface2
+        )
     }
 }

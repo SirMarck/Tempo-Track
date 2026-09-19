@@ -32,28 +32,69 @@ class TimeTrackerViewModel(
     val clients: StateFlow<List<Client>> = repository.allClients
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val activeClients: StateFlow<List<Client>> = repository.activeClients
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val projects: StateFlow<List<com.example.data.Project>> = repository.allProjects
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activeProjects: StateFlow<List<com.example.data.Project>> = repository.activeProjects
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activities: StateFlow<List<com.example.data.Activity>> = repository.activeActivities
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val sessions: StateFlow<List<Session>> = repository.allSessions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val activeSession: StateFlow<Session?> = repository.activeSession
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun addClient(name: String, hourlyRate: Double) {
+    val closingBatches: StateFlow<List<com.example.data.ClosingBatch>> = repository.allClosingBatches
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addClient(name: String, hourlyRate: Double, notes: String? = null) {
         viewModelScope.launch {
-            repository.insertClient(Client(name = name, hourlyRate = hourlyRate))
+            repository.insertClient(Client(name = name, hourlyRate = hourlyRate, notes = notes))
         }
     }
 
-    fun startSession(clientId: Long, description: String, tag: String = "") {
+    fun startSession(
+        clientId: Long,
+        description: String = "",
+        tag: String = "",
+        projectId: Long? = null,
+        activityId: Long? = null,
+        billable: Boolean = true
+    ) {
         viewModelScope.launch {
-            // First check if there's any active session, shouldn't start 2
             if (activeSession.value == null) {
-                repository.insertSession(
+                val now = System.currentTimeMillis()
+                // Snapshot da taxa seguindo: Projeto -> Cliente -> 0.0
+                val project = projectId?.let { repository.getProjectById(it) }
+                val client = repository.getClientById(clientId)
+                val rate = project?.hourlyRate ?: client?.hourlyRate ?: 0.0
+
+                val newSessionId = repository.insertSession(
                     Session(
                         clientId = clientId,
-                        startTime = System.currentTimeMillis(),
+                        projectId = projectId,
+                        activityId = activityId,
+                        billable = billable,
+                        appliedRate = rate,
+                        startTime = now,
                         description = description,
-                        tag = tag
+                        tag = tag,
+                        status = "running",
+                        source = "timer"
+                    )
+                )
+
+                // Cria o primeiro TimeSegment
+                repository.insertSegment(
+                    com.example.data.TimeSegment(
+                        sessionId = newSessionId,
+                        startedAt = now
                     )
                 )
             }
@@ -65,12 +106,21 @@ class TimeTrackerViewModel(
             val session = activeSession.value
             if (session != null) {
                 val now = System.currentTimeMillis()
-                if (session.isPaused) {
-                    val finalEndTime = session.lastPausedTime ?: now
-                    repository.updateSession(session.copy(endTime = finalEndTime))
-                } else {
-                    repository.updateSession(session.copy(endTime = now))
+                val finalEndTime = if (session.isPaused) (session.lastPausedTime ?: now) else now
+
+                // Encerra qualquer segmento em aberto
+                val segments = repository.getSegmentsForSessionSync(session.id)
+                val lastOpen = segments.lastOrNull { it.endedAt == null }
+                if (lastOpen != null) {
+                    repository.updateSegment(lastOpen.copy(endedAt = finalEndTime))
                 }
+
+                repository.updateSession(
+                    session.copy(
+                        endTime = finalEndTime,
+                        status = "completed"
+                    )
+                )
             }
         }
     }
@@ -81,11 +131,20 @@ class TimeTrackerViewModel(
             if (session != null && !session.isPaused) {
                 val now = System.currentTimeMillis()
                 val newEvents = if (session.pauseEvents.isEmpty()) "P:$now" else "${session.pauseEvents},P:$now"
+
+                // Encerra o segmento atual com endedAt
+                val segments = repository.getSegmentsForSessionSync(session.id)
+                val lastOpen = segments.lastOrNull { it.endedAt == null }
+                if (lastOpen != null) {
+                    repository.updateSegment(lastOpen.copy(endedAt = now))
+                }
+
                 repository.updateSession(
                     session.copy(
                         isPaused = true,
                         lastPausedTime = now,
-                        pauseEvents = newEvents
+                        pauseEvents = newEvents,
+                        status = "paused"
                     )
                 )
             }
@@ -99,12 +158,22 @@ class TimeTrackerViewModel(
                 val now = System.currentTimeMillis()
                 val addedPause = now - (session.lastPausedTime ?: now)
                 val newEvents = if (session.pauseEvents.isEmpty()) "R:$now" else "${session.pauseEvents},R:$now"
+
+                // Cria novo segmento de tempo para o trecho retomado
+                repository.insertSegment(
+                    com.example.data.TimeSegment(
+                        sessionId = session.id,
+                        startedAt = now
+                    )
+                )
+
                 repository.updateSession(
                     session.copy(
                         isPaused = false,
                         lastPausedTime = null,
                         pausedDuration = session.pausedDuration + addedPause,
-                        pauseEvents = newEvents
+                        pauseEvents = newEvents,
+                        status = "running"
                     )
                 )
             }
@@ -119,7 +188,128 @@ class TimeTrackerViewModel(
 
     fun deleteClient(id: Long) {
         viewModelScope.launch {
-            repository.deleteClientById(id)
+            // Regra do Guia v2: se houver sessões associadas, arquiva em vez de deletar fisicamente
+            val count = repository.countSessionsForClient(id)
+            if (count > 0) {
+                repository.archiveClient(id)
+            } else {
+                repository.deleteClientById(id)
+            }
+        }
+    }
+
+    fun archiveClient(id: Long) {
+        viewModelScope.launch {
+            repository.archiveClient(id)
+        }
+    }
+
+    fun unarchiveClient(id: Long) {
+        viewModelScope.launch {
+            repository.unarchiveClient(id)
+        }
+    }
+
+    // ─── Projetos ─────────────────────────────────────────────────────────────
+    fun addProject(
+        clientId: Long,
+        name: String,
+        billingMode: String = "hourly",
+        hourlyRate: Double? = null,
+        budgetMinutes: Long? = null,
+        budgetAmount: Double? = null
+    ) {
+        viewModelScope.launch {
+            repository.insertProject(
+                com.example.data.Project(
+                    clientId = clientId,
+                    name = name,
+                    billingMode = billingMode,
+                    hourlyRate = hourlyRate,
+                    budgetMinutes = budgetMinutes,
+                    budgetAmount = budgetAmount
+                )
+            )
+        }
+    }
+
+    fun updateProject(project: com.example.data.Project) {
+        viewModelScope.launch {
+            repository.updateProject(project.copy(updatedAt = System.currentTimeMillis()))
+        }
+    }
+
+    fun archiveProject(id: Long) {
+        viewModelScope.launch {
+            repository.archiveProject(id)
+        }
+    }
+
+    fun deleteProject(id: Long) {
+        viewModelScope.launch {
+            val count = repository.countSessionsForProject(id)
+            if (count > 0) {
+                repository.archiveProject(id)
+            } else {
+                repository.deleteProjectById(id)
+            }
+        }
+    }
+
+    // ─── Atividades ───────────────────────────────────────────────────────────
+    fun addActivity(name: String, defaultBillable: Boolean = true) {
+        viewModelScope.launch {
+            repository.insertActivity(com.example.data.Activity(name = name, defaultBillable = defaultBillable))
+        }
+    }
+
+    // ─── Fechamentos Financeiros ──────────────────────────────────────────────
+    fun createClosingBatch(
+        clientId: Long,
+        fromDate: Long,
+        toDate: Long,
+        sessionsToClose: List<Session>,
+        invoiceNumber: String? = null,
+        notes: String? = null,
+        onComplete: ((Long) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val client = repository.getClientById(clientId)
+            val rateFallback = client?.hourlyRate ?: 0.0
+            val totalHours = sessionsToClose.sumOf { it.calculateDurationMillis().toDouble() / (1000 * 60 * 60) }
+            val totalAmount = sessionsToClose.sumOf { it.calculateEarnings(rateFallback) }
+
+            val batchId = repository.insertClosingBatch(
+                com.example.data.ClosingBatch(
+                    clientId = clientId,
+                    fromDate = fromDate,
+                    toDate = toDate,
+                    status = "invoiced",
+                    totalHours = totalHours,
+                    totalAmount = totalAmount,
+                    sessionCount = sessionsToClose.size,
+                    invoiceNumber = invoiceNumber,
+                    notes = notes
+                )
+            )
+
+            val entries = sessionsToClose.map { session ->
+                com.example.data.ClosingEntry(closingBatchId = batchId, sessionId = session.id)
+            }
+            repository.insertClosingEntries(entries)
+
+            // Atualiza o estado de cada sessão para invoiced e associa ao batch
+            for (session in sessionsToClose) {
+                repository.updateSessionClosing(session.id, batchId, "invoiced")
+            }
+
+            onComplete?.invoke(batchId)
+        }
+    }
+
+    fun markBatchAsPaid(batchId: Long) {
+        viewModelScope.launch {
+            repository.updateClosingBatchStatus(batchId, "paid")
         }
     }
 
@@ -142,22 +332,46 @@ class TimeTrackerViewModel(
         description: String,
         discountValue: Double = 0.0,
         discountPercentage: Double = 0.0,
-        tag: String = ""
+        tag: String = "",
+        projectId: Long? = null,
+        activityId: Long? = null,
+        billable: Boolean = true,
+        customRate: Double? = null
     ) {
         viewModelScope.launch {
-            repository.insertSession(
+            val client = repository.getClientById(clientId)
+            val project = projectId?.let { repository.getProjectById(it) }
+            val rate = customRate ?: project?.hourlyRate ?: client?.hourlyRate ?: 0.0
+
+            val sessionId = repository.insertSession(
                 Session(
                     clientId = clientId,
+                    projectId = projectId,
+                    activityId = activityId,
                     startTime = startTime,
                     endTime = endTime,
                     description = description,
                     discountValue = discountValue,
                     discountPercentage = discountPercentage,
-                    tag = tag
+                    tag = tag,
+                    billable = billable,
+                    appliedRate = rate,
+                    status = "completed",
+                    source = "manual"
+                )
+            )
+
+            // Salva o segmento do lançamento manual
+            repository.insertSegment(
+                com.example.data.TimeSegment(
+                    sessionId = sessionId,
+                    startedAt = startTime,
+                    endedAt = endTime
                 )
             )
         }
     }
+
 
     fun requestMonthlyAnalysis(
         monthName: String,
@@ -238,6 +452,55 @@ class TimeTrackerViewModel(
             } catch (e: Exception) {
                 onComplete(com.example.utils.BackupResult.Error("Erro ao abrir o arquivo: ${e.localizedMessage}"))
             }
+        }
+    }
+
+    fun createClosingBatch(
+        clientId: Long,
+        fromDate: Long,
+        toDate: Long,
+        sessionIds: List<Long>,
+        notes: String? = null,
+        onComplete: (Long) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val sessionsToClose = sessionIds.mapNotNull { repository.getSessionById(it) }
+            val client = repository.getClientById(clientId)
+            val fallbackRate = client?.hourlyRate ?: 0.0
+
+            val totalDurationMillis = sessionsToClose.sumOf { it.calculateDurationMillis() }
+            val totalHours = totalDurationMillis.toDouble() / (1000 * 60 * 60)
+            val totalAmount = sessionsToClose.sumOf { it.calculateEarnings(fallbackRate) }
+
+            val batch = com.example.data.ClosingBatch(
+                clientId = clientId,
+                fromDate = fromDate,
+                toDate = toDate,
+                status = "invoiced",
+                totalHours = totalHours,
+                totalAmount = totalAmount,
+                sessionCount = sessionsToClose.size,
+                notes = notes,
+                createdAt = System.currentTimeMillis()
+            )
+
+            val batchId = repository.insertClosingBatch(batch)
+
+            // Insere as entradas de ligação e atualiza as sessões
+            val entries = sessionIds.map { com.example.data.ClosingEntry(closingBatchId = batchId, sessionId = it) }
+            repository.insertClosingEntries(entries)
+
+            sessionIds.forEach { sid ->
+                repository.updateSessionClosing(sid, batchId, "billed")
+            }
+
+            onComplete(batchId)
+        }
+    }
+
+    fun markClosingBatchPaid(batchId: Long) {
+        viewModelScope.launch {
+            repository.updateClosingBatchStatus(batchId, "paid")
         }
     }
 }
