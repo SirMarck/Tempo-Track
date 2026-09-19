@@ -141,7 +141,7 @@ fun ClientsScreen(viewModel: TimeTrackerViewModel) {
         if (showAddDialog) {
             AddClientDialog(
                 onDismiss = { showAddDialog = false },
-                onAdd = { name, rate ->
+                onSave = { name, rate ->
                     viewModel.addClient(name, rate)
                     showAddDialog = false
                 }
@@ -213,48 +213,6 @@ fun ClientItem(client: Client, onEdit: () -> Unit, onDelete: () -> Unit) {
             }
         }
     }
-}
-
-@Composable
-private fun AddClientDialog(onDismiss: () -> Unit, onAdd: (String, Double) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var rateStr by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Novo Cliente") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nome do Cliente") },
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = rateStr,
-                    onValueChange = { rateStr = it },
-                    label = { Text("Valor por Hora") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val rate = rateStr.replace(",", ".").toDoubleOrNull() ?: 0.0
-                    if (name.isNotBlank()) onAdd(name, rate)
-                }
-            ) {
-                Text("Salvar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        }
-    )
 }
 
 @Composable

@@ -585,7 +585,7 @@ fun AddProjectDialog(
 }
 
 @Composable
-private fun AddClientDialog(
+fun AddClientDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, rate: Double) -> Unit
 ) {
