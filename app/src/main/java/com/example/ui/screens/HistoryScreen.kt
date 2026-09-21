@@ -244,7 +244,7 @@ fun HistoryScreen(
                     SwipeToDismissBox(
                         state = dismissState,
                         backgroundContent = {
-                            val isStartToEnd = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+                            val isStartToEnd = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -315,7 +315,7 @@ fun HistoryScreen(
     }
 
     if (selectedSessionForEdit != null) {
-        EditSessionDialog(
+        FullEditSessionDialog(
             session = selectedSessionForEdit!!,
             clients = clients,
             projects = projects,

@@ -640,7 +640,7 @@ fun ReportsScreen(
 
                             // Barra de progresso proporcional
                             LinearProgressIndicator(
-                                progress = { stat.percentage },
+                                progress = stat.percentage,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
@@ -694,7 +694,7 @@ fun ReportsScreen(
                             }
 
                             LinearProgressIndicator(
-                                progress = { stat.percentage },
+                                progress = stat.percentage,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(4.dp)

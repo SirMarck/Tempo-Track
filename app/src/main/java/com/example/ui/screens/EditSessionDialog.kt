@@ -38,7 +38,7 @@ import java.util.*
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditSessionDialog(
+fun FullEditSessionDialog(
     session: Session,
     clients: List<Client>,
     projects: List<Project>,
