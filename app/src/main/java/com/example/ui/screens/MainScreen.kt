@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -105,11 +106,11 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
                             }
                         )
 
-                        // 3. Projetos
+                        // 3. Clientes
                         val isProjectsSelected = currentRoute == Screen.Projects.route || currentRoute == "clients"
                         NavigationBarItem(
-                            icon = { Icon(Icons.Default.Folder, contentDescription = "Projetos") },
-                            label = { Text("Projetos") },
+                            icon = { Icon(Icons.Default.Person, contentDescription = "Clientes") },
+                            label = { Text("Clientes") },
                             selected = isProjectsSelected,
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = TempoAccent,
@@ -183,7 +184,12 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
             }
 
             composable(Screen.Reports.route) {
-                ReportsScreen(viewModel = viewModel)
+                ReportsScreen(
+                    viewModel = viewModel,
+                    onNavigateToClientDetail = { clientId ->
+                        navController.navigate(Screen.ClientDetail.createRoute(clientId))
+                    }
+                )
             }
 
             // Rota de Foco Total 3D (Transição Firme & Rápida Container Transform)

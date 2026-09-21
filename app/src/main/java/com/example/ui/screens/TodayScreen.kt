@@ -266,7 +266,7 @@ fun TodayScreen(
                     }
 
                     Button(
-                        onClick = { showNewWorkSheet = true },
+                        onClick = { showManualDialog = true },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TempoSurface2,
                             contentColor = TempoTextPrimary
@@ -275,9 +275,9 @@ fun TodayScreen(
                         modifier = Modifier.weight(1f).height(38.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.AddAlarm, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Iniciar Trabalho", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Lançar Manual", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -450,58 +450,7 @@ fun TodayScreen(
                 }
             }
 
-            // ─── 3. Timeline do Dia ───────────────────────────────────────────
-            item {
-                Spacer(modifier = Modifier.height(TempoSpacing.space2))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Linha do Tempo de Hoje",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TempoTextPrimary
-                    )
 
-                    if (todaySessions.isNotEmpty()) {
-                        Text(
-                            text = "${todaySessions.size} registros",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TempoTextMuted
-                        )
-                    }
-                }
-            }
-
-            if (todaySessions.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = TempoSpacing.space5),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Nenhum trabalho finalizado hoje ainda.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TempoTextMuted
-                        )
-                    }
-                }
-            } else {
-                items(todaySessions) { session ->
-                    val client = clients.find { it.id == session.clientId }
-                    val project = projects.find { it.id == session.projectId }
-                    TodayTimelineItem(
-                        session = session,
-                        clientName = client?.name ?: "Cliente",
-                        projectName = project?.name,
-                        effectiveRate = if (session.appliedRate > 0.0) session.appliedRate else (client?.hourlyRate ?: 0.0)
-                    )
-                }
-            }
 
             item {
                 Spacer(modifier = Modifier.height(TempoSpacing.space6))
@@ -723,93 +672,4 @@ fun ActiveTimerPanel(
     }
 }
 
-/**
- * Linha individual da timeline de hoje com horários ancorados à esquerda.
- */
-@Composable
-fun TodayTimelineItem(
-    session: Session,
-    clientName: String,
-    projectName: String?,
-    effectiveRate: Double
-) {
-    val startStr = FormatUtils.formatTime(session.startTime).substring(0, 5)
-    val endStr = session.endTime?.let { FormatUtils.formatTime(it).substring(0, 5) } ?: "agora"
-    val durationStr = FormatUtils.formatDuration(session.calculateDurationMillis())
-    val earnings = session.calculateEarnings(effectiveRate)
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(TempoRadius.shapeSm)
-            .background(TempoSurface1)
-            .tempoMaterialHighlight(TempoRadius.shapeSm)
-            .padding(horizontal = TempoSpacing.space4, vertical = TempoSpacing.space3),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Horários ancorados à esquerda
-        Column(
-            modifier = Modifier.width(64.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = startStr,
-                style = MaterialTheme.typography.labelMedium.copy(fontFamily = TempoMono),
-                color = TempoTextSecondary,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = endStr,
-                style = MaterialTheme.typography.bodySmall.copy(fontFamily = TempoMono),
-                color = TempoTextMuted
-            )
-        }
-
-        // Barra sutil vertical
-        Box(
-            modifier = Modifier
-                .width(2.dp)
-                .height(32.dp)
-                .background(TempoOutline)
-        )
-
-        Spacer(modifier = Modifier.width(TempoSpacing.space3))
-
-        // Dados do cliente e descrição
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = clientName,
-                style = MaterialTheme.typography.labelLarge,
-                color = TempoTextPrimary,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            val sub = listOfNotNull(projectName, session.description.takeIf { it.isNotEmpty() }).joinToString(" • ")
-            if (sub.isNotEmpty()) {
-                Text(
-                    text = sub,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TempoTextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        // Duração e valor à direita
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = durationStr,
-                style = MaterialTheme.typography.labelLarge.copy(fontFamily = TempoMono),
-                color = TempoTextPrimary,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = FormatUtils.formatCurrency(earnings),
-                style = MaterialTheme.typography.bodySmall.copy(fontFamily = TempoMono),
-                color = TempoTextSecondary
-            )
-        }
-    }
-}

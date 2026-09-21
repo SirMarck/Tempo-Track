@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +51,8 @@ fun HistoryScreen(
 
     var selectedPeriod by remember { mutableStateOf(HistoryFilterPeriod.DAY) }
     var selectedSessionForEdit by remember { mutableStateOf<Session?>(null) }
+    var sessionToDelete by remember { mutableStateOf<Session?>(null) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showManualDialog by remember { mutableStateOf(false) }
 
     // Sessões filtradas conforme o período
@@ -210,7 +213,7 @@ fun HistoryScreen(
                     }
                 }
             } else {
-                items(filteredSessions) { session ->
+                items(filteredSessions, key = { it.id }) { session ->
                     val client = clients.find { it.id == session.clientId }
                     val project = projects.find { it.id == session.projectId }
                     val fallback = client?.hourlyRate ?: 0.0
@@ -226,14 +229,58 @@ fun HistoryScreen(
                         }
                     }
 
-                    HistoryTimelineRow(
-                        session = session,
-                        clientName = client?.name ?: "Cliente",
-                        projectName = project?.name,
-                        effectiveRate = if (session.appliedRate > 0.0) session.appliedRate else fallback,
-                        hasOverlap = hasOverlap,
-                        onClick = { selectedSessionForEdit = session }
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { dismissValue ->
+                            if (dismissValue == SwipeToDismissBoxValue.EndToStart || dismissValue == SwipeToDismissBoxValue.StartToEnd) {
+                                sessionToDelete = session
+                                showDeleteConfirmDialog = true
+                                false
+                            } else {
+                                false
+                            }
+                        }
                     )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        backgroundContent = {
+                            val isStartToEnd = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(TempoRadius.shapeSm)
+                                    .background(TempoDanger)
+                                    .padding(horizontal = 20.dp),
+                                contentAlignment = if (isStartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Excluir",
+                                        tint = Color.White
+                                    )
+                                    Text(
+                                        text = "Excluir",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
+                        }
+                    ) {
+                        HistoryTimelineRow(
+                            session = session,
+                            clientName = client?.name ?: "Cliente",
+                            projectName = project?.name,
+                            effectiveRate = if (session.appliedRate > 0.0) session.appliedRate else fallback,
+                            hasOverlap = hasOverlap,
+                            onClick = { selectedSessionForEdit = session }
+                        )
+                    }
                 }
             }
 
@@ -263,6 +310,66 @@ fun HistoryScreen(
                     tag = tag
                 )
                 showManualDialog = false
+            }
+        )
+    }
+
+    if (selectedSessionForEdit != null) {
+        EditSessionDialog(
+            session = selectedSessionForEdit!!,
+            clients = clients,
+            projects = projects,
+            activities = activities,
+            onDismiss = { selectedSessionForEdit = null },
+            onSave = { updatedSession ->
+                viewModel.updateSession(updatedSession)
+                selectedSessionForEdit = null
+            }
+        )
+    }
+
+    if (showDeleteConfirmDialog && sessionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteConfirmDialog = false
+                sessionToDelete = null
+            },
+            containerColor = TempoSurface1,
+            title = {
+                Text(
+                    text = "Excluir Registro",
+                    fontWeight = FontWeight.Bold,
+                    color = TempoTextPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "Tem certeza de que deseja excluir este registro de trabalho permanentemente? Esta ação não pode ser desfeita.",
+                    color = TempoTextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        sessionToDelete?.let { viewModel.deleteSession(it) }
+                        showDeleteConfirmDialog = false
+                        sessionToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = TempoDanger),
+                    shape = TempoRadius.shapeSm
+                ) {
+                    Text("Excluir", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        sessionToDelete = null
+                    }
+                ) {
+                    Text("Cancelar", color = TempoTextMuted)
+                }
             }
         )
     }

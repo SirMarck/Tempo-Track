@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -37,6 +39,7 @@ fun NewWorkSheet(
     onDismiss: () -> Unit,
     onStart: (clientId: Long, projectId: Long?, activityId: Long?, description: String, billable: Boolean, tag: String) -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var searchQuery by remember { mutableStateOf("") }
     var selectedClientId by remember { mutableLongStateOf(clients.firstOrNull()?.id ?: 0L) }
     var selectedProjectId by remember { mutableStateOf<Long?>(null) }
@@ -71,6 +74,7 @@ fun NewWorkSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = TempoSurface1,
         dragHandle = {
             Box(
@@ -86,6 +90,8 @@ fun NewWorkSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = TempoSpacing.space4)
                 .padding(bottom = TempoSpacing.space5),
             verticalArrangement = Arrangement.spacedBy(TempoSpacing.space4)

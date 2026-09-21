@@ -52,7 +52,7 @@ fun ProjectsScreen(
     val activeProjects by viewModel.activeProjects.collectAsState()
     val sessions by viewModel.sessions.collectAsState()
 
-    var activeTab by remember { mutableStateOf(ProjectViewTab.PROJECTS) }
+    var activeTab by remember { mutableStateOf(ProjectViewTab.CLIENTS) }
     var searchQuery by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -81,49 +81,11 @@ fun ProjectsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Projetos",
+                        text = "Clientes",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = TempoTextPrimary
                     )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        IconButton(
-                            onClick = {
-                                activeTab = ProjectViewTab.CLIENTS
-                                showAddDialog = true
-                            },
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(TempoSurface2)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PersonAdd,
-                                contentDescription = "Novo Cliente",
-                                tint = TempoAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                activeTab = ProjectViewTab.PROJECTS
-                                showAddDialog = true
-                            },
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(TempoSurface2)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Novo Projeto",
-                                tint = TempoTextPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
                 }
 
                 // Quick Action Bar for instant one-tap creation
@@ -168,15 +130,15 @@ fun ProjectsScreen(
                     }
                 }
 
-                // Alternância entre Projetos e Clientes
+                // Alternância entre Clientes e Projetos
                 TempoSegmentedFilter(
-                    options = listOf(ProjectViewTab.PROJECTS, ProjectViewTab.CLIENTS),
+                    options = listOf(ProjectViewTab.CLIENTS, ProjectViewTab.PROJECTS),
                     selectedOption = activeTab,
                     onOptionSelected = { activeTab = it },
                     labelProvider = { tab ->
                         when (tab) {
-                            ProjectViewTab.PROJECTS -> "Projetos Ativos (${activeProjects.size})"
                             ProjectViewTab.CLIENTS -> "Clientes (${activeClients.size})"
+                            ProjectViewTab.PROJECTS -> "Projetos Ativos (${activeProjects.size})"
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
