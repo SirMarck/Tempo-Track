@@ -38,25 +38,63 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Room DB & ViewModel init
-        val database = AppDatabase.getDatabase(this)
-        val repository = TimeTrackerRepository(database.timeTrackerDao())
-        val viewModelFactory = TimeTrackerViewModelFactory(repository)
-        val viewModel = ViewModelProvider(this, viewModelFactory)[TimeTrackerViewModel::class.java]
+        try {
+            // Room DB & ViewModel init
+            val database = AppDatabase.getDatabase(this)
+            val repository = TimeTrackerRepository(database.timeTrackerDao())
+            val viewModelFactory = TimeTrackerViewModelFactory(repository)
+            val viewModel = ViewModelProvider(this, viewModelFactory)[TimeTrackerViewModel::class.java]
 
-        askNotificationPermission()
-        setupWorker()
-        com.example.utils.MonthlyReportManager.checkAndGenerateMonthlyReports(this)
+            try {
+                askNotificationPermission()
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Notification permission error", e)
+            }
 
-        setContent {
-            MyApplicationTheme {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .grainEffect()
-                ) {
-                    MainScreen(viewModel = viewModel)
+            try {
+                setupWorker()
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Worker setup error", e)
+            }
+
+            try {
+                com.example.utils.MonthlyReportManager.checkAndGenerateMonthlyReports(this)
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "MonthlyReportManager error", e)
+            }
+
+            setContent {
+                MyApplicationTheme {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .grainEffect()
+                    ) {
+                        MainScreen(viewModel = viewModel)
+                    }
                 }
+            }
+        } catch (e: Throwable) {
+            android.util.Log.e("MainActivity", "Fatal startup error recovered", e)
+            try {
+                deleteDatabase("time_tracker_database")
+                val database = AppDatabase.getDatabase(this)
+                val repository = TimeTrackerRepository(database.timeTrackerDao())
+                val viewModelFactory = TimeTrackerViewModelFactory(repository)
+                val viewModel = ViewModelProvider(this, viewModelFactory)[TimeTrackerViewModel::class.java]
+                setContent {
+                    MyApplicationTheme {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .grainEffect()
+                        ) {
+                            MainScreen(viewModel = viewModel)
+                        }
+                    }
+                }
+            } catch (e2: Throwable) {
+                android.util.Log.e("MainActivity", "Catastrophic error on startup", e2)
             }
         }
     }
@@ -72,13 +110,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setupWorker() {
-        // Enqueues a worker to run roughly every 12 hours acting as a daily reminder
-        val reminderWorkRequest = PeriodicWorkRequestBuilder<ReminderWorker>(12, TimeUnit.HOURS)
-            .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "DailyReminderWorker",
-            ExistingPeriodicWorkPolicy.KEEP,
-            reminderWorkRequest
-        )
+        try {
+            // Enqueues a worker to run roughly every 12 hours acting as a daily reminder
+            val reminderWorkRequest = PeriodicWorkRequestBuilder<ReminderWorker>(12, TimeUnit.HOURS)
+                .build()
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "DailyReminderWorker",
+                ExistingPeriodicWorkPolicy.KEEP,
+                reminderWorkRequest
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to enqueue reminder worker", e)
+        }
     }
 }

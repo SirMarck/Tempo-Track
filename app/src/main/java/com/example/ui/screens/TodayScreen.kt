@@ -55,14 +55,18 @@ fun TodayScreen(
 
     // Foreground service sync
     LaunchedEffect(activeSession) {
-        if (activeSession != null) {
-            val intent = android.content.Intent(context, com.example.services.TimerService::class.java).apply {
-                action = com.example.services.TimerService.ACTION_START
+        try {
+            if (activeSession != null) {
+                val intent = android.content.Intent(context, com.example.services.TimerService::class.java).apply {
+                    action = com.example.services.TimerService.ACTION_START
+                }
+                androidx.core.content.ContextCompat.startForegroundService(context, intent)
+            } else {
+                val intent = android.content.Intent(context, com.example.services.TimerService::class.java)
+                context.stopService(intent)
             }
-            androidx.core.content.ContextCompat.startForegroundService(context, intent)
-        } else {
-            val intent = android.content.Intent(context, com.example.services.TimerService::class.java)
-            context.stopService(intent)
+        } catch (e: Exception) {
+            android.util.Log.e("TodayScreen", "Foreground service start/stop failed", e)
         }
     }
 
