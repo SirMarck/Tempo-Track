@@ -75,8 +75,10 @@ fun TodayScreen(
     }
 
     var showNewWorkSheet by remember { mutableStateOf(false) }
+    var preSelectedClientId by remember { mutableStateOf<Long?>(null) }
     var showManualDialog by remember { mutableStateOf(false) }
     var showAddClientDialog by remember { mutableStateOf(false) }
+    var showManageActivitiesDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -118,12 +120,14 @@ fun TodayScreen(
         }
     }
 
-    // Trabalhos recentes para continuação em 1 toque
-    val recentContinuations = remember(sessions, clients) {
+    // Clientes recentes para abertura de novo trabalho pré-preenchido
+    val recentClients = remember(sessions, clients) {
         sessions
             .filter { it.endTime != null }
-            .distinctBy { "${it.clientId}-${it.projectId}-${it.activityId}" }
-            .take(4)
+            .sortedByDescending { it.startTime }
+            .mapNotNull { s -> clients.find { it.id == s.clientId } }
+            .distinctBy { it.id }
+            .take(6)
     }
 
     Scaffold(
@@ -176,6 +180,14 @@ fun TodayScreen(
                                 showSettingsDialog = true
                             },
                             leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Atividades e Tags") },
+                            onClick = {
+                                showMenu = false
+                                showManageActivitiesDialog = true
+                            },
+                            leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null) }
                         )
                         DropdownMenuItem(
                             text = { Text("Lançamento Manual") },
@@ -357,30 +369,42 @@ fun TodayScreen(
                         }
                     )
                 } else {
-                    // Sem sessão ativa: botão primário Iniciar + Continuar Recentes
+                    // Sem sessão ativa: botão primário Iniciar + Clientes Recentes
                     Column(verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)) {
                         TempoPrimaryAction(
                             text = "Iniciar Trabalho",
-                            onClick = { showNewWorkSheet = true },
+                            onClick = {
+                                preSelectedClientId = null
+                                showNewWorkSheet = true
+                            },
                             icon = Icons.Default.PlayArrow,
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        if (recentContinuations.isNotEmpty()) {
+                        if (recentClients.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(TempoSpacing.space1))
-                            Text(
-                                text = "CONTINUAR",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TempoTextMuted,
-                                letterSpacing = 0.8.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "CLIENTES RECENTES",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TempoTextMuted,
+                                    letterSpacing = 0.8.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Toque para novo trabalho",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TempoTextMuted
+                                )
+                            }
 
                             Column(verticalArrangement = Arrangement.spacedBy(TempoSpacing.space2)) {
-                                recentContinuations.forEach { recent ->
-                                    val client = clients.find { it.id == recent.clientId }
-                                    val project = projects.find { it.id == recent.projectId }
-
+                                recentClients.forEach { client ->
+                                    val clientProjectCount = projects.count { it.clientId == client.id }
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -389,15 +413,8 @@ fun TodayScreen(
                                             .tempoMaterialHighlight(TempoRadius.shapeSm)
                                             .clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                // Fluxo de 1 toque: inicia imediatamente com contexto anterior
-                                                viewModel.startSession(
-                                                    clientId = recent.clientId,
-                                                    projectId = recent.projectId,
-                                                    activityId = recent.activityId,
-                                                    billable = recent.billable,
-                                                    tag = recent.tag,
-                                                    description = recent.description
-                                                )
+                                                preSelectedClientId = client.id
+                                                showNewWorkSheet = true
                                             }
                                             .padding(horizontal = TempoSpacing.space4, vertical = TempoSpacing.space3),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -410,43 +427,53 @@ fun TodayScreen(
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(34.dp)
+                                                    .size(36.dp)
                                                     .clip(CircleShape)
                                                     .background(TempoSurface2),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.PlayArrow,
-                                                    contentDescription = null,
-                                                    tint = TempoAccent,
-                                                    modifier = Modifier.size(16.dp)
+                                                Text(
+                                                    text = client.name.take(1).uppercase(),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = TempoAccent
                                                 )
                                             }
 
                                             Column {
                                                 Text(
-                                                    text = client?.name ?: "Cliente",
+                                                    text = client.name,
                                                     style = MaterialTheme.typography.titleSmall,
                                                     color = TempoTextPrimary,
                                                     fontWeight = FontWeight.SemiBold
                                                 )
-                                                val detail = listOfNotNull(project?.name, recent.tag.takeIf { it.isNotEmpty() }).joinToString(" • ")
-                                                if (detail.isNotEmpty()) {
-                                                    Text(
-                                                        text = detail,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = TempoTextSecondary
-                                                    )
-                                                }
+                                                val rateStr = if (client.hourlyRate > 0) "${FormatUtils.formatCurrency(client.hourlyRate)}/h" else "Sem taxa padrão"
+                                                val projStr = if (clientProjectCount > 0) "$clientProjectCount projeto(s)" else "Sem projetos"
+                                                Text(
+                                                    text = "$rateStr • $projStr",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = TempoTextSecondary
+                                                )
                                             }
                                         }
 
-                                        Icon(
-                                            imageVector = Icons.Default.ChevronRight,
-                                            contentDescription = null,
-                                            tint = TempoTextMuted,
-                                            modifier = Modifier.size(20.dp)
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Iniciar",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = TempoAccent,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Default.ChevronRight,
+                                                contentDescription = null,
+                                                tint = TempoAccent,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -468,7 +495,14 @@ fun TodayScreen(
             clients = activeClients.ifEmpty { clients },
             projects = projects,
             activities = activities,
-            onDismiss = { showNewWorkSheet = false },
+            initialClientId = preSelectedClientId,
+            onDismiss = {
+                showNewWorkSheet = false
+                preSelectedClientId = null
+            },
+            onManageActivities = {
+                showManageActivitiesDialog = true
+            },
             onStart = { clientId, projectId, activityId, desc, billable, tag ->
                 viewModel.startSession(
                     clientId = clientId,
@@ -479,6 +513,7 @@ fun TodayScreen(
                     tag = tag
                 )
                 showNewWorkSheet = false
+                preSelectedClientId = null
             }
         )
     }
@@ -504,6 +539,13 @@ fun TodayScreen(
                 )
                 showManualDialog = false
             }
+        )
+    }
+
+    if (showManageActivitiesDialog) {
+        ManageActivitiesAndTagsDialog(
+            viewModel = viewModel,
+            onDismiss = { showManageActivitiesDialog = false }
         )
     }
 

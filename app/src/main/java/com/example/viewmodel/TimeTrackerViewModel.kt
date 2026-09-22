@@ -263,6 +263,44 @@ class TimeTrackerViewModel(
         }
     }
 
+    fun updateActivity(activity: com.example.data.Activity) {
+        viewModelScope.launch {
+            repository.updateActivity(activity)
+        }
+    }
+
+    fun deleteActivity(id: Long) {
+        viewModelScope.launch {
+            repository.deleteActivityById(id)
+        }
+    }
+
+    fun archiveActivity(id: Long) {
+        viewModelScope.launch {
+            repository.archiveActivity(id)
+        }
+    }
+
+    // ─── Tags Personalizáveis ──────────────────────────────────────────────────
+    private val _tags = MutableStateFlow<List<String>>(com.example.utils.TagManager.DEFAULT_TAGS)
+    val tags: StateFlow<List<String>> = _tags
+
+    fun loadTags(context: android.content.Context) {
+        _tags.value = com.example.utils.TagManager.getTags(context)
+    }
+
+    fun addTag(context: android.content.Context, tag: String) {
+        _tags.value = com.example.utils.TagManager.addTag(context, tag)
+    }
+
+    fun updateTag(context: android.content.Context, oldTag: String, newTag: String) {
+        _tags.value = com.example.utils.TagManager.updateTag(context, oldTag, newTag)
+    }
+
+    fun deleteTag(context: android.content.Context, tag: String) {
+        _tags.value = com.example.utils.TagManager.deleteTag(context, tag)
+    }
+
     // ─── Fechamentos Financeiros ──────────────────────────────────────────────
     fun createClosingBatch(
         clientId: Long,

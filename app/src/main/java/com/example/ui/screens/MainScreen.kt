@@ -107,7 +107,7 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
                         )
 
                         // 3. Clientes
-                        val isProjectsSelected = currentRoute == Screen.Projects.route || currentRoute == "clients"
+                        val isProjectsSelected = currentRoute == Screen.Projects.route || currentRoute == "clients" || currentRoute?.startsWith("client_detail") == true
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.Person, contentDescription = "Clientes") },
                             label = { Text("Clientes") },
@@ -120,10 +120,13 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
                                 unselectedTextColor = TempoTextMuted
                             ),
                             onClick = {
+                                if (currentRoute?.startsWith("client_detail") == true || currentRoute?.startsWith("project_detail") == true) {
+                                    navController.popBackStack(Screen.Projects.route, inclusive = false)
+                                }
                                 navController.navigate(Screen.Projects.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(Screen.Projects.route) { inclusive = true }
                                     launchSingleTop = true
-                                    restoreState = true
+                                    restoreState = false
                                 }
                             }
                         )

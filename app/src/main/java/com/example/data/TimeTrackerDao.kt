@@ -92,6 +92,9 @@ interface TimeTrackerDao {
     @Query("UPDATE activities SET archivedAt = :archivedAt WHERE id = :id")
     suspend fun archiveActivity(id: Long, archivedAt: Long = System.currentTimeMillis())
 
+    @Query("DELETE FROM activities WHERE id = :id")
+    suspend fun deleteActivityById(id: Long)
+
     // ─── Sessões (WorkSession) ────────────────────────────────────────────────
     @Query("SELECT * FROM sessions ORDER BY startTime DESC")
     fun getAllSessions(): Flow<List<Session>>

@@ -6,6 +6,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,7 +24,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -129,6 +135,20 @@ fun ReportsScreen(
             }
         }.sortedByDescending { it.startTime }
     }
+
+    // Animação de entrada dos gráficos ao abrir a tela ou alterar o período
+    var isAnimated by remember { mutableStateOf(false) }
+    LaunchedEffect(periodMode, filteredSessions.size) {
+        isAnimated = false
+        kotlinx.coroutines.delay(40)
+        isAnimated = true
+    }
+
+    val animProgress by animateFloatAsState(
+        targetValue = if (isAnimated) 1f else 0f,
+        animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing),
+        label = "reportsChartProgress"
+    )
 
     // Totais calculados
     val totalDurationMillis = remember(filteredSessions) {
@@ -496,64 +516,13 @@ fun ReportsScreen(
                 }
             }
 
-            // ─── 4. Gráfico de Utilização Diária (Histograma) ────────────────
-            if (dailyDistribution.isNotEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(TempoRadius.shapeMd)
-                        .background(TempoSurface1)
-                        .padding(TempoSpacing.space4),
-                    verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
-                ) {
-                    Text(
-                        text = "UTILIZAÇÃO DIÁRIA (HORAS)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TempoTextMuted,
-                        letterSpacing = 0.8.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(110.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        for (entry in dailyDistribution) {
-                            val heightFraction = (entry.value.toFloat() / maxDailyMillis.toFloat()).coerceIn(0.08f, 1f)
-                            val hoursText = String.format(Locale.US, "%.1fh", entry.value.toDouble() / (1000 * 60 * 60))
-
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Bottom,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = hoursText,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontFamily = TempoMono),
-                                    color = TempoTextSecondary
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .width(16.dp)
-                                        .fillMaxHeight(heightFraction)
-                                        .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                        .background(TempoAccent)
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = entry.key,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontFamily = TempoMono),
-                                    color = TempoTextMuted
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            // ─── 4. Gráfico Animado de Distribuição por Cliente (Donut) ─────
+            AnimatedDonutChart(
+                clientDistribution = clientDistribution,
+                animProgress = animProgress,
+                totalHours = totalHours,
+                totalEarnings = totalEarnings
+            )
 
             // ─── 5. Gráfico de Horas e Faturamento por Cliente ───────────────
             Column(
@@ -638,9 +607,9 @@ fun ReportsScreen(
                                 }
                             }
 
-                            // Barra de progresso proporcional
+                            // Barra de progresso proporcional animada
                             LinearProgressIndicator(
-                                progress = stat.percentage,
+                                progress = stat.percentage * animProgress,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
@@ -693,13 +662,14 @@ fun ReportsScreen(
                                 )
                             }
 
+                            // Barra de progresso proporcional animada
                             LinearProgressIndicator(
-                                progress = stat.percentage,
+                                progress = stat.percentage * animProgress,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(4.dp)
                                     .clip(CircleShape),
-                                color = TempoTextSecondary,
+                                color = TempoAccent,
                                 trackColor = TempoSurface2
                             )
                         }
@@ -857,3 +827,192 @@ data class ActivityDashboardStat(
     val sessionCount: Int,
     val percentage: Float
 )
+
+@Composable
+fun AnimatedDonutChart(
+    clientDistribution: List<ClientDashboardStat>,
+    animProgress: Float,
+    totalHours: Double,
+    totalEarnings: Double,
+    modifier: Modifier = Modifier
+) {
+    val chartColors = remember {
+        listOf(
+            TempoAccent,
+            Color(0xFF38BDF8),
+            Color(0xFF34D399),
+            Color(0xFFA78BFA),
+            Color(0xFFF43F5E),
+            Color(0xFFFBBF24),
+            Color(0xFF2DD4BF),
+            Color(0xFF818CF8)
+        )
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(TempoRadius.shapeMd)
+            .background(TempoSurface1)
+            .tempoMaterialHighlight(TempoRadius.shapeMd)
+            .padding(TempoSpacing.space4),
+        verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "DISTRIBUIÇÃO POR CLIENTE",
+                style = MaterialTheme.typography.labelSmall,
+                color = TempoTextMuted,
+                letterSpacing = 0.8.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "${clientDistribution.size} ${if (clientDistribution.size == 1) "cliente" else "clientes"}",
+                style = MaterialTheme.typography.labelSmall,
+                color = TempoAccent,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        if (clientDistribution.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sem dados no período",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TempoTextMuted
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Donut Canvas com centro informativo
+                Box(
+                    modifier = Modifier.size(140.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val strokeWidth = 14.dp.toPx()
+                        val arcRadius = (size.minDimension - strokeWidth) / 2f
+                        val arcTopLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
+                        val arcSize = Size(arcRadius * 2f, arcRadius * 2f)
+
+                        // Trilha de fundo
+                        drawArc(
+                            color = Color.White.copy(alpha = 0.06f),
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            topLeft = arcTopLeft,
+                            size = arcSize,
+                            style = Stroke(width = strokeWidth)
+                        )
+
+                        var currentAngle = -90f
+                        clientDistribution.forEachIndexed { index, stat ->
+                            val color = chartColors[index % chartColors.size]
+                            val sweep = stat.percentage * 360f * animProgress
+                            if (sweep > 0.5f) {
+                                val gap = if (clientDistribution.size > 1) 3f else 0f
+                                val actualSweep = (sweep - gap).coerceAtLeast(1f)
+                                drawArc(
+                                    color = color,
+                                    startAngle = currentAngle,
+                                    sweepAngle = actualSweep,
+                                    useCenter = false,
+                                    topLeft = arcTopLeft,
+                                    size = arcSize,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
+                            currentAngle += stat.percentage * 360f * animProgress
+                        }
+                    }
+
+                    // Informação no meio do Donut
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = FormatUtils.formatDuration((totalHours * 3600 * 1000).toLong()),
+                            style = MaterialTheme.typography.titleMedium.copy(fontFamily = TempoMono),
+                            fontWeight = FontWeight.Bold,
+                            color = TempoTextPrimary
+                        )
+                        Text(
+                            text = "TOTAL",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = TempoTextMuted,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+                }
+
+                // Legenda lateral com porcentagem e cores
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    clientDistribution.take(5).forEachIndexed { index, stat ->
+                        val color = chartColors[index % chartColors.size]
+                        val pctText = "${(stat.percentage * 100).toInt()}%"
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                )
+                                Text(
+                                    text = stat.client.name,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TempoTextPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Text(
+                                text = pctText,
+                                style = MaterialTheme.typography.labelSmall.copy(fontFamily = TempoMono),
+                                color = color,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    if (clientDistribution.size > 5) {
+                        Text(
+                            text = "+ ${clientDistribution.size - 5} outros",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TempoTextMuted
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

@@ -37,6 +37,7 @@ class TimeTrackerRepository(private val dao: TimeTrackerDao) {
     suspend fun insertActivity(activity: Activity): Long = dao.insertActivity(activity)
     suspend fun updateActivity(activity: Activity) = dao.updateActivity(activity)
     suspend fun archiveActivity(id: Long) = dao.archiveActivity(id)
+    suspend fun deleteActivityById(id: Long) = dao.deleteActivityById(id)
 
     // ─── Sessões (WorkSession) ────────────────────────────────────────────────
     val allSessions: Flow<List<Session>> = dao.getAllSessions()

@@ -55,6 +55,7 @@ fun ClientDetailScreen(
     val context = LocalContext.current
     val clients by viewModel.clients.collectAsState()
     val projects by viewModel.projects.collectAsState()
+    val activities by viewModel.activities.collectAsState()
     val sessions by viewModel.sessions.collectAsState()
 
     val client = remember(clients, clientId) {
@@ -78,10 +79,16 @@ fun ClientDetailScreen(
     val clientProjects = remember(projects, clientId) {
         projects.filter { it.clientId == clientId && it.archivedAt == null }
     }
+    val clientProjectIds = remember(clientProjects) { clientProjects.map { it.id }.toSet() }
 
-    val clientSessions = remember(sessions, clientId) {
-        sessions.filter { it.clientId == clientId && it.endTime != null }
-            .sortedByDescending { it.startTime }
+    val clientSessions = remember(sessions, clientId, clientProjectIds) {
+        sessions.filter { session ->
+            session.endTime != null && (
+                session.clientId == clientId || (session.projectId != null && session.projectId in clientProjectIds)
+            ) && (
+                session.projectId == null || session.projectId in clientProjectIds
+            )
+        }.sortedByDescending { it.startTime }
     }
 
     var activeTab by remember { mutableStateOf(ClientDetailTab.OVERVIEW) }
@@ -199,8 +206,11 @@ fun ClientDetailScreen(
     }
 
     var showEditRateDialog by remember { mutableStateOf(false) }
+    var showEditClientDialog by remember { mutableStateOf(false) }
     var showArchiveConfirmDialog by remember { mutableStateOf(false) }
     var rateInput by remember { mutableStateOf(client.hourlyRate.toString()) }
+    var editClientNameInput by remember { mutableStateOf(client.name) }
+    var editClientRateInput by remember { mutableStateOf(client.hourlyRate.toString()) }
 
     // Sessões filtradas para o relatório do cliente por período selecionado
     val reportFilteredSessions = remember(clientSessions, reportPeriod, customStartMillis, customEndMillis) {
@@ -276,6 +286,17 @@ fun ClientDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        editClientNameInput = client.name
+                        editClientRateInput = client.hourlyRate.toString()
+                        showEditClientDialog = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar Cliente",
+                            tint = TempoAccent
+                        )
+                    }
                     IconButton(onClick = { showArchiveConfirmDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Archive,
@@ -321,12 +342,31 @@ fun ClientDetailScreen(
 
                     Spacer(modifier = Modifier.height(TempoSpacing.space2))
 
-                    Text(
-                        text = client.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = TempoTextPrimary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                editClientNameInput = client.name
+                                editClientRateInput = client.hourlyRate.toString()
+                                showEditClientDialog = true
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = client.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TempoTextPrimary
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar Nome",
+                            tint = TempoAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
 
                     Text(
                         text = "Cliente Corporativo • ${FormatUtils.formatCurrency(client.hourlyRate)}/h",
@@ -513,6 +553,16 @@ fun ClientDetailScreen(
                         val dateStr = FormatUtils.formatDate(session.startTime)
                         val earn = session.calculateEarnings(if (session.appliedRate > 0.0) session.appliedRate else client.hourlyRate)
 
+                        val p = projects.find { it.id == session.projectId }
+                        val a = activities.find { it.id == session.activityId }
+                        val title = session.description.ifBlank { p?.name ?: a?.name ?: "Trabalho realizado" }
+                        val subtitle = listOfNotNull(
+                            dateStr,
+                            p?.name?.takeIf { it != title },
+                            a?.name?.takeIf { it != title },
+                            session.tag.takeIf { it.isNotBlank() }
+                        ).joinToString(" • ")
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -522,9 +572,22 @@ fun ClientDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(session.description.ifBlank { "Trabalho realizado" }, style = MaterialTheme.typography.bodyMedium, color = TempoTextPrimary)
-                                Text(dateStr, style = MaterialTheme.typography.labelSmall, color = TempoTextMuted)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TempoTextPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = subtitle,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TempoTextMuted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(durStr, style = MaterialTheme.typography.bodySmall.copy(fontFamily = TempoMono), color = TempoTextPrimary)
@@ -992,6 +1055,52 @@ fun ClientDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveConfirmDialog = false }) { Text("CANCELAR", color = TempoTextSecondary) }
+            },
+            containerColor = TempoSurface1
+        )
+    }
+
+    // Modal de Edição Completa do Cliente (Nome e Taxa)
+    if (showEditClientDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditClientDialog = false },
+            title = { Text("Editar Informações do Cliente", fontWeight = FontWeight.Bold, color = TempoTextPrimary) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Altere o nome e a taxa padrão deste cliente.", style = MaterialTheme.typography.bodySmall, color = TempoTextSecondary)
+                    OutlinedTextField(
+                        value = editClientNameInput,
+                        onValueChange = { editClientNameInput = it },
+                        label = { Text("Nome do Cliente") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editClientRateInput,
+                        onValueChange = { editClientRateInput = it },
+                        label = { Text("Taxa Padrão (R$/h)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val newName = editClientNameInput.trim()
+                        val newRate = editClientRateInput.replace(",", ".").toDoubleOrNull() ?: client.hourlyRate
+                        if (newName.isNotBlank()) {
+                            viewModel.updateClient(client.copy(name = newName, hourlyRate = newRate))
+                            showEditClientDialog = false
+                            Toast.makeText(context, "Cliente atualizado com sucesso!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("SALVAR", color = TempoAccent, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditClientDialog = false }) { Text("CANCELAR", color = TempoTextSecondary) }
             },
             containerColor = TempoSurface1
         )
