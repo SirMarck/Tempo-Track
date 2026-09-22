@@ -57,6 +57,7 @@ fun HolographicClock3D(
     isPaused: Boolean,
     modifier: Modifier = Modifier,
     sizeDp: Dp = 230.dp,
+    effectiveRate: Double? = null,
     onClick: (() -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -551,8 +552,13 @@ fun HolographicClock3D(
                     )
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             ) {
+                val displayText = if (effectiveRate != null && effectiveRate <= 0.0) {
+                    "Sem taxa"
+                } else {
+                    FormatUtils.formatCurrency(accumulatedEarnings)
+                }
                 Text(
-                    text = FormatUtils.formatCurrency(accumulatedEarnings),
+                    text = displayText,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = TempoMono,
                         fontSize = 14.sp,

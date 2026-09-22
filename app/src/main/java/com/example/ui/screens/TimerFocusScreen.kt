@@ -32,6 +32,7 @@ import com.example.utils.rememberDeviceTilt
 import com.example.viewmodel.TimeTrackerViewModel
 import kotlinx.coroutines.delay
 import com.example.ui.components.HolographicClock3D
+import com.example.ui.components.PlanetaryBackgroundDisks
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos
@@ -102,9 +103,9 @@ fun TimerFocusScreen(
 
     val effectiveRate = remember(session, project, client) {
         if (session.appliedRate > 0.0) session.appliedRate
-        else FormatUtils.resolveEffectiveRate(project, client, 170.0)
+        else FormatUtils.resolveEffectiveRate(project, client, 0.0)
     }
-    val currentEarnings = if (session.billable) {
+    val currentEarnings = if (session.billable && effectiveRate > 0.0) {
         (durationMillis.toDouble() / (1000.0 * 3600.0)) * effectiveRate
     } else 0.0
 
@@ -156,8 +157,18 @@ fun TimerFocusScreen(
                     radius = 900f
                 )
             )
-            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
+        // Discos planetários sutis com transparência por toda a tela atrás dos botões
+        PlanetaryBackgroundDisks(
+            isEnabled = !session.isPaused,
+            deviceTilt = deviceTilt
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
         // ─── Top Header: Back Arrow, Centered Status, More Icon ─────────────
         Row(
             modifier = Modifier
@@ -205,20 +216,8 @@ fun TimerFocusScreen(
                 )
             }
 
-            IconButton(
-                onClick = { /* Menu opções */ },
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF161B22))
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Mais opções",
-                    tint = TempoTextMuted,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Espaçador para manter a pílula de status perfeitamente centralizada
+            Spacer(modifier = Modifier.size(38.dp))
         }
 
         // ─── Centro: Título, Relógio Isométrico 3D e Métricas ───────────────
@@ -269,7 +268,8 @@ fun TimerFocusScreen(
                 durationText = durationFormatted,
                 accumulatedEarnings = currentEarnings,
                 isPaused = session.isPaused,
-                sizeDp = 270.dp
+                sizeDp = 270.dp,
+                effectiveRate = if (session.billable) effectiveRate else 0.0
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -297,7 +297,7 @@ fun TimerFocusScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = FormatUtils.formatCurrency(effectiveRate),
+                            text = if (effectiveRate > 0.0) FormatUtils.formatCurrency(effectiveRate) else "Sem taxa",
                             fontSize = 15.sp,
                             fontFamily = TempoMono,
                             fontWeight = FontWeight.Bold,
@@ -332,33 +332,6 @@ fun TimerFocusScreen(
                         )
                     }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // ─── Dots Indicator (• • •) ─────────────────────────────────────
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 16.dp, height = 5.dp)
-                        .clip(CircleShape)
-                        .background(TempoTextPrimary)
-                )
-                Box(
-                    modifier = Modifier
-                        .size(5.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.3f))
-                )
-                Box(
-                    modifier = Modifier
-                        .size(5.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.3f))
-                )
             }
         }
 
@@ -465,5 +438,6 @@ fun TimerFocusScreen(
             }
         }
     }
+}
 }
 

@@ -601,9 +601,13 @@ fun ActiveTimerPanel(
     val durationMillis = session.calculateDurationMillis(currentTime)
     val durationText = FormatUtils.formatDuration(durationMillis)
 
-    val rate = if (session.appliedRate > 0.0) session.appliedRate else (client?.hourlyRate ?: 0.0)
+    val rate = if (session.appliedRate > 0.0) {
+        session.appliedRate
+    } else {
+        project?.hourlyRate?.takeIf { it > 0.0 } ?: client?.hourlyRate ?: 0.0
+    }
     val durationHours = durationMillis.toDouble() / (1000 * 60 * 60)
-    val accumulatedEarnings = durationHours * rate
+    val accumulatedEarnings = if (session.billable && rate > 0.0) durationHours * rate else 0.0
 
     val haptic = LocalHapticFeedback.current
 
@@ -657,6 +661,7 @@ fun ActiveTimerPanel(
                 accumulatedEarnings = accumulatedEarnings,
                 isPaused = session.isPaused,
                 sizeDp = 220.dp,
+                effectiveRate = if (session.billable) rate else 0.0,
                 onClick = onOpenFocus
             )
 

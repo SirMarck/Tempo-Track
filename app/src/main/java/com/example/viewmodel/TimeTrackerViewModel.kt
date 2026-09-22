@@ -70,10 +70,11 @@ class TimeTrackerViewModel(
         viewModelScope.launch {
             if (activeSession.value == null) {
                 val now = System.currentTimeMillis()
-                // Snapshot da taxa seguindo: Projeto -> Cliente -> 0.0
+                // Snapshot da taxa seguindo: Projeto -> Cliente -> 0.0 (se faturável)
                 val project = projectId?.let { repository.getProjectById(it) }
                 val client = repository.getClientById(clientId)
-                val rate = project?.hourlyRate ?: client?.hourlyRate ?: 0.0
+                val resolvedRate = project?.hourlyRate?.takeIf { it > 0.0 } ?: client?.hourlyRate ?: 0.0
+                val rate = if (billable) resolvedRate else 0.0
 
                 val newSessionId = repository.insertSession(
                     Session(
