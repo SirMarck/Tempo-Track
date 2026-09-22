@@ -29,7 +29,11 @@ import com.example.utils.UpdateManager
 import com.example.viewmodel.TimeTrackerViewModel
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.data.Activity
 import com.example.ui.components.HolographicClock3D
+import com.example.ui.components.PlanetaryBackgroundDisks
+import com.example.utils.rememberDeviceTilt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -49,6 +53,7 @@ fun TodayScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val deviceTilt by rememberDeviceTilt()
 
     val clients by viewModel.clients.collectAsState()
     val activeClients by viewModel.activeClients.collectAsState()
@@ -130,8 +135,20 @@ fun TodayScreen(
             .take(6)
     }
 
-    Scaffold(
-        topBar = {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(TempoBgBase)
+    ) {
+        // Efeitos cósmicos por toda a tela atrás dos botões quando o cronômetro estiver ativo
+        PlanetaryBackgroundDisks(
+            isEnabled = activeSession != null && !activeSession!!.isPaused,
+            deviceTilt = deviceTilt
+        )
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -354,7 +371,7 @@ fun TodayScreen(
                         session = activeSession!!,
                         clients = clients,
                         projects = projects,
-                        onOpenFocus = onNavigateToFocus,
+                        activities = activities,
                         onPause = { viewModel.pauseActiveSession() },
                         onResume = { viewModel.resumeActiveSession() },
                         onFinish = {
@@ -570,6 +587,7 @@ fun TodayScreen(
         )
     }
 }
+}
 
 /**
  * Painel da Sessão Ativa na tela Hoje com cálculo em tempo real e atalhos rápidos.
@@ -579,7 +597,7 @@ fun ActiveTimerPanel(
     session: Session,
     clients: List<Client>,
     projects: List<Project>,
-    onOpenFocus: () -> Unit,
+    activities: List<Activity> = emptyList(),
     onPause: () -> Unit,
     onResume: () -> Unit,
     onFinish: () -> Unit
@@ -597,6 +615,7 @@ fun ActiveTimerPanel(
 
     val client = clients.find { it.id == session.clientId }
     val project = projects.find { it.id == session.projectId }
+    val activity = activities.find { it.id == session.activityId }
 
     val durationMillis = session.calculateDurationMillis(currentTime)
     val durationText = FormatUtils.formatDuration(durationMillis)
@@ -608,6 +627,10 @@ fun ActiveTimerPanel(
     }
     val durationHours = durationMillis.toDouble() / (1000 * 60 * 60)
     val accumulatedEarnings = if (session.billable && rate > 0.0) durationHours * rate else 0.0
+
+    val sessionStartTimeFormatted = remember(session.startTime) {
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(session.startTime))
+    }
 
     val haptic = LocalHapticFeedback.current
 
@@ -623,15 +646,19 @@ fun ActiveTimerPanel(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
         ) {
-            // Cabeçalho: Badge de status e cliente
+            // Cabeçalho: Status com ponto luminoso (sem o texto 'gire o telefone')
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space2)
+                    horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space2),
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(TempoSurface2)
+                        .padding(horizontal = 12.dp, vertical = 5.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -647,12 +674,52 @@ fun ActiveTimerPanel(
                         letterSpacing = 0.5.sp
                     )
                 }
+            }
 
+            // Identificação: Cliente, Projeto e Atividade
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
-                    text = "Gire o aparelho para ver em 3D",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TempoTextMuted
+                    text = client?.name ?: "Cliente",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.3).sp
+                    ),
+                    color = TempoTextPrimary
                 )
+                val projectTitle = project?.name ?: session.description.takeIf { it.isNotEmpty() }
+                if (!projectTitle.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = projectTitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TempoTextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (activity != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Adjust,
+                            contentDescription = null,
+                            tint = Color(0xFFFF6B35),
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = activity.name,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFFFF6B35)
+                        )
+                    }
+                }
             }
 
             // ─── Relógio Holográfico 3D Vivo com Giroscópio ──────────────────
@@ -660,31 +727,68 @@ fun ActiveTimerPanel(
                 durationText = durationText,
                 accumulatedEarnings = accumulatedEarnings,
                 isPaused = session.isPaused,
-                sizeDp = 220.dp,
+                sizeDp = 240.dp,
                 effectiveRate = if (session.billable) rate else 0.0,
-                onClick = onOpenFocus
+                onClick = null // Desabilita abrir outra tela ao clicar no relógio: tudo funciona diretamente aqui na aba Hoje!
             )
 
-            // Nome do cliente e projeto/atividade
-            Column(
+            // ─── Dual Metric Cards (Valor/hora & Início) ──────────
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = client?.name ?: "Cliente",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = TempoTextPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                val detail = listOfNotNull(project?.name, session.description.takeIf { it.isNotEmpty() }).joinToString(" — ")
-                if (detail.isNotEmpty()) {
-                    Text(
-                        text = detail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TempoTextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                // Card 1: Valor/hora
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(TempoSurface2.copy(alpha = 0.75f))
+                        .tempoMaterialHighlight(RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "Valor/hora",
+                            fontSize = 11.sp,
+                            color = TempoTextMuted,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (rate > 0.0) FormatUtils.formatCurrency(rate) else "Sem taxa",
+                            fontSize = 14.sp,
+                            fontFamily = TempoMono,
+                            fontWeight = FontWeight.Bold,
+                            color = TempoTextPrimary
+                        )
+                    }
+                }
+
+                // Card 2: Início
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(TempoSurface2.copy(alpha = 0.75f))
+                        .tempoMaterialHighlight(RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Início",
+                            fontSize = 11.sp,
+                            color = TempoTextMuted,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = sessionStartTimeFormatted,
+                            fontSize = 14.sp,
+                            fontFamily = TempoMono,
+                            fontWeight = FontWeight.Bold,
+                            color = TempoTextPrimary
+                        )
+                    }
                 }
             }
 

@@ -52,7 +52,13 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
                         clients = clients,
                         projects = projects,
                         onOpenFocus = {
-                            navController.navigate(Screen.TimerFocus.route)
+                            navController.navigate(Screen.Today.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = false
+                                }
+                                launchSingleTop = true
+                                restoreState = false
+                            }
                         },
                         onPause = { viewModel.pauseActiveSession() },
                         onResume = { viewModel.resumeActiveSession() }
@@ -186,7 +192,7 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
             composable(Screen.Today.route) {
                 TodayScreen(
                     viewModel = viewModel,
-                    onNavigateToFocus = { navController.navigate(Screen.TimerFocus.route) },
+                    onNavigateToFocus = { /* Desabilitado: o relógio com efeitos cósmicos fica diretamente na tela Hoje */ },
                     onNavigateToHistory = { navController.navigate(Screen.History.route) }
                 )
             }
@@ -274,7 +280,7 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
             composable("dashboard") {
                 TodayScreen(
                     viewModel = viewModel,
-                    onNavigateToFocus = { navController.navigate(Screen.TimerFocus.route) },
+                    onNavigateToFocus = { /* Desabilitado: o relógio com efeitos cósmicos fica diretamente na tela Hoje */ },
                     onNavigateToHistory = { navController.navigate(Screen.History.route) }
                 )
             }
