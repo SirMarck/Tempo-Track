@@ -156,7 +156,23 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
         NavHost(
             navController = navController,
             startDestination = Screen.Today.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)) +
+                        scaleIn(initialScale = 0.95f, animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
+                        scaleOut(targetScale = 0.97f, animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)) +
+                        scaleIn(initialScale = 0.95f, animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
+                        scaleOut(targetScale = 0.97f, animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing))
+            }
         ) {
             // Rotas Principais
             composable(Screen.Today.route) {

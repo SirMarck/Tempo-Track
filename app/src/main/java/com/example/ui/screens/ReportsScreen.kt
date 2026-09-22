@@ -202,15 +202,15 @@ fun ReportsScreen(
     }
 
     // Distribuição de horas por dia (para o histograma visual)
-    val dailyDistribution = remember(filteredSessions) {
-        val map = mutableMapOf<String, Long>()
+    val dailyDistribution: List<Map.Entry<String, Long>> = remember(filteredSessions) {
+        val map = linkedMapOf<String, Long>()
         val dayFormat = SimpleDateFormat("dd/MM", Locale.getDefault())
         filteredSessions.forEach { s ->
             val dayKey = dayFormat.format(Date(s.startTime))
             map[dayKey] = (map[dayKey] ?: 0L) + s.calculateDurationMillis()
         }
-        // Ordena pelos últimos dias
-        map.entries.takeLast(10).toList()
+        val list = map.entries.toList()
+        if (list.size > 10) list.takeLast(10) else list
     }
 
     val maxDailyMillis = remember(dailyDistribution) {
@@ -521,7 +521,7 @@ fun ReportsScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        dailyDistribution.forEach { entry ->
+                        for (entry in dailyDistribution) {
                             val heightFraction = (entry.value.toFloat() / maxDailyMillis.toFloat()).coerceIn(0.08f, 1f)
                             val hoursText = String.format(Locale.US, "%.1fh", entry.value.toDouble() / (1000 * 60 * 60))
 

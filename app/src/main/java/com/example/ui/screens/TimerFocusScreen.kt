@@ -31,6 +31,7 @@ import com.example.utils.FormatUtils
 import com.example.utils.rememberDeviceTilt
 import com.example.viewmodel.TimeTrackerViewModel
 import kotlinx.coroutines.delay
+import com.example.ui.components.HolographicClock3D
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos
@@ -264,183 +265,12 @@ fun TimerFocusScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // ─── Estágio 3D do Relógio Toroidal com Inclinação Isométrica ───
-            Box(
-                modifier = Modifier
-                    .size(280.dp)
-                    .graphicsLayer {
-                        rotationX = animatedPitch
-                        rotationZ = animatedRoll
-                        rotationY = 8f
-                        cameraDistance = 16f * density.density
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                // Canvas 3D: Anel Toroidal de Cristal Facetado + Plasma Neon Laranja
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val canvasWidth = size.width
-                    val canvasHeight = size.height
-                    val center = Offset(canvasWidth / 2f, canvasHeight / 2f)
-                    val radius = canvasWidth / 2f - 12f
-
-                    // 1. Corpo base do anel grafite translúcido
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF1E2630),
-                                Color(0xFF12171E),
-                                Color(0xFF090C0F)
-                            ),
-                            center = center,
-                            radius = radius
-                        ),
-                        radius = radius,
-                        center = center
-                    )
-
-                    // 2. Facetas de cristal (16 blocos chanfrados com glints brancos)
-                    val numSegments = 16
-                    for (i in 0 until numSegments) {
-                        val segAngle = (i.toFloat() / numSegments) * 360f
-                        val isEven = i % 2 == 0
-                        drawArc(
-                            color = if (isEven) Color.White.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.08f),
-                            startAngle = segAngle,
-                            sweepAngle = 16f,
-                            useCenter = false,
-                            topLeft = Offset(center.x - radius, center.y - radius),
-                            size = Size(radius * 2, radius * 2),
-                            style = Stroke(width = 16f)
-                        )
-                    }
-
-                    // Borda externa de vidro chanfrado com glint especular
-                    drawCircle(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.9f),
-                                Color.White.copy(alpha = 0.1f),
-                                Color.White.copy(alpha = 0.8f)
-                            ),
-                            start = Offset(0f, 0f),
-                            end = Offset(canvasWidth, canvasHeight)
-                        ),
-                        radius = radius + 8f,
-                        center = center,
-                        style = Stroke(width = 2.5f)
-                    )
-
-                    // 3. Arcos de Plasma Neon Laranja Intenso (matching media_1789841983545.png)
-                    val plasmaColor = Color(0xFFFF6B35)
-                    val plasmaGlow = Color(0xFFFF9E58)
-
-                    // Arco Principal (lado direito superior-inferior: ~140 graus)
-                    drawArc(
-                        color = plasmaGlow.copy(alpha = 0.35f * glowPulse),
-                        startAngle = -70f,
-                        sweepAngle = 145f,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius + 10f, center.y - radius + 10f),
-                        size = Size((radius - 10f) * 2, (radius - 10f) * 2),
-                        style = Stroke(width = 14f, cap = StrokeCap.Round)
-                    )
-                    drawArc(
-                        color = plasmaColor,
-                        startAngle = -70f,
-                        sweepAngle = 145f,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius + 10f, center.y - radius + 10f),
-                        size = Size((radius - 10f) * 2, (radius - 10f) * 2),
-                        style = Stroke(width = 7.5f, cap = StrokeCap.Round)
-                    )
-
-                    // Arco Secundário (topo esquerdo: ~35 graus)
-                    drawArc(
-                        color = plasmaGlow.copy(alpha = 0.3f * glowPulse),
-                        startAngle = 145f,
-                        sweepAngle = 35f,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius + 10f, center.y - radius + 10f),
-                        size = Size((radius - 10f) * 2, (radius - 10f) * 2),
-                        style = Stroke(width = 12f, cap = StrokeCap.Round)
-                    )
-                    drawArc(
-                        color = Color(0xFFFFA24C),
-                        startAngle = 145f,
-                        sweepAngle = 35f,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius + 10f, center.y - radius + 10f),
-                        size = Size((radius - 10f) * 2, (radius - 10f) * 2),
-                        style = Stroke(width = 6f, cap = StrokeCap.Round)
-                    )
-
-                    // 4. Trilho interno com ticks discretos
-                    val tickRadius = radius - 26f
-                    for (i in 0 until 60) {
-                        val angleDeg = i * 6f
-                        val angleRad = Math.toRadians(angleDeg.toDouble() - 90.0)
-                        val isHourTick = i % 5 == 0
-                        val tickLen = if (isHourTick) 7f else 4f
-                        val startX = center.x + ((tickRadius - tickLen) * cos(angleRad)).toFloat()
-                        val startY = center.y + ((tickRadius - tickLen) * sin(angleRad)).toFloat()
-                        val endX = center.x + (tickRadius * cos(angleRad)).toFloat()
-                        val endY = center.y + (tickRadius * sin(angleRad)).toFloat()
-
-                        drawLine(
-                            color = if (isHourTick) Color.White.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.12f),
-                            start = Offset(startX, startY),
-                            end = Offset(endX, endY),
-                            strokeWidth = if (isHourTick) 2f else 1f,
-                            cap = StrokeCap.Round
-                        )
-                    }
-
-                    // 5. Disco central rebaixado (obsidian sunken plate)
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF0E1217),
-                                Color(0xFF07090C)
-                            ),
-                            center = center,
-                            radius = radius - 30f
-                        ),
-                        radius = radius - 30f,
-                        center = center
-                    )
-                }
-
-                // Conteúdo Central: Dígitos Monospace Legíveis com Contrarrotação
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.graphicsLayer {
-                        rotationZ = -animatedRoll
-                        rotationX = -animatedPitch
-                    }
-                ) {
-                    Text(
-                        text = durationFormatted,
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontFamily = TempoMono,
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.8).sp
-                        ),
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = FormatUtils.formatCurrency(currentEarnings),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = TempoMono,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = Color(0xFFFF8A50)
-                    )
-                }
-            }
+            HolographicClock3D(
+                durationText = durationFormatted,
+                accumulatedEarnings = currentEarnings,
+                isPaused = session.isPaused,
+                sizeDp = 270.dp
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

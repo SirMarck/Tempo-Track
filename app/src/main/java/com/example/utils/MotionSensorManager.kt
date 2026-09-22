@@ -49,20 +49,25 @@ fun rememberDeviceTilt(): State<DeviceTilt> {
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
                     val orientation = FloatArray(3)
                     SensorManager.getOrientation(rotationMatrix, orientation)
-                    rawPitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
-                    rawRoll = Math.toDegrees(orientation[2].toDouble()).toFloat()
+                    // Posição natural de segurar o celular: pitch em torno de -45..-55 graus
+                    val naturalPitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
+                    val naturalRoll = Math.toDegrees(orientation[2].toDouble()).toFloat()
+                    rawPitch = (naturalPitch + 48f) * 1.8f
+                    rawRoll = naturalRoll * 1.8f
                 } else if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                    rawPitch = event.values[1] * 3.5f
-                    rawRoll = -event.values[0] * 3.5f
+                    // event.values[0]: inclinação lateral (Roll: esquerda/direita)
+                    // event.values[1]: inclinação frontal (Pitch: cima/baixo, repouso ~6.5 m/s²)
+                    rawRoll = -event.values[0] * 2.8f
+                    rawPitch = (event.values[1] - 6.5f) * 2.8f
                 }
 
-                // Aplica low-pass filter
+                // Aplica low-pass filter suave
                 smoothedPitch = smoothedPitch + alpha * (rawPitch - smoothedPitch)
                 smoothedRoll = smoothedRoll + alpha * (rawRoll - smoothedRoll)
 
-                // Clamp estrito de +/- 4 graus
-                val clampedPitch = smoothedPitch.coerceIn(-4f, 4f)
-                val clampedRoll = smoothedRoll.coerceIn(-4f, 4f)
+                // Alcance dinâmico visível e responsivo (+/- 16 graus)
+                val clampedPitch = smoothedPitch.coerceIn(-16f, 16f)
+                val clampedRoll = smoothedRoll.coerceIn(-16f, 16f)
 
                 tiltState.value = DeviceTilt(pitch = clampedPitch, roll = clampedRoll)
             }

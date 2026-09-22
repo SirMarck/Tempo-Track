@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,19 +51,20 @@ fun HistoryScreen(
     val activities by viewModel.activities.collectAsState()
     val sessions by viewModel.sessions.collectAsState()
 
+    val haptic = LocalHapticFeedback.current
+    var selectedClientId by remember { mutableStateOf<Long?>(null) }
     var selectedPeriod by remember { mutableStateOf(HistoryFilterPeriod.DAY) }
     var selectedSessionForEdit by remember { mutableStateOf<Session?>(null) }
     var sessionToDelete by remember { mutableStateOf<Session?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showManualDialog by remember { mutableStateOf(false) }
 
-    // Sessões filtradas conforme o período
-    val filteredSessions = remember(sessions, selectedPeriod) {
+    // Sessões filtradas conforme o período e cliente selecionado
+    val filteredSessions = remember(sessions, selectedPeriod, selectedClientId) {
         val cal = Calendar.getInstance()
-        val now = System.currentTimeMillis()
         val completed = sessions.filter { it.endTime != null }
 
-        when (selectedPeriod) {
+        val periodFiltered = when (selectedPeriod) {
             HistoryFilterPeriod.DAY -> {
                 val todayYear = cal.get(Calendar.YEAR)
                 val todayDay = cal.get(Calendar.DAY_OF_YEAR)
@@ -84,7 +87,15 @@ fun HistoryScreen(
                     c.get(Calendar.MONTH) == currentMonth && c.get(Calendar.YEAR) == currentYear
                 }
             }
-        }.sortedByDescending { it.startTime }
+        }
+
+        val clientFiltered = if (selectedClientId != null) {
+            periodFiltered.filter { it.clientId == selectedClientId }
+        } else {
+            periodFiltered
+        }
+
+        clientFiltered.sortedByDescending { it.startTime }
     }
 
     // Totais do período
@@ -121,6 +132,7 @@ fun HistoryScreen(
 
                     IconButton(
                         onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             showManualDialog = true
                             onOpenManualEntry()
                         },
@@ -144,7 +156,10 @@ fun HistoryScreen(
                 TempoSegmentedFilter(
                     options = listOf(HistoryFilterPeriod.DAY, HistoryFilterPeriod.WEEK, HistoryFilterPeriod.MONTH),
                     selectedOption = selectedPeriod,
-                    onOptionSelected = { selectedPeriod = it },
+                    onOptionSelected = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        selectedPeriod = it
+                    },
                     labelProvider = { period ->
                         when (period) {
                             HistoryFilterPeriod.DAY -> "Dia"
@@ -154,6 +169,54 @@ fun HistoryScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // ─── Chips Horizontais de Filtro por Cliente ──────────────────
+                if (clients.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(TempoSpacing.space2))
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        item {
+                            val isAllSelected = selectedClientId == null
+                            FilterChip(
+                                selected = isAllSelected,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    selectedClientId = null
+                                },
+                                label = { Text("Todos", style = MaterialTheme.typography.labelMedium) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = TempoAccent,
+                                    selectedLabelColor = Color.Black,
+                                    containerColor = TempoSurface2,
+                                    labelColor = TempoTextSecondary
+                                ),
+                                border = null,
+                                shape = CircleShape
+                            )
+                        }
+                        items(clients, key = { it.id }) { client ->
+                            val isSelected = selectedClientId == client.id
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    selectedClientId = if (isSelected) null else client.id
+                                },
+                                label = { Text(client.name, style = MaterialTheme.typography.labelMedium) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = TempoAccent,
+                                    selectedLabelColor = Color.Black,
+                                    containerColor = TempoSurface2,
+                                    labelColor = TempoTextSecondary
+                                ),
+                                border = null,
+                                shape = CircleShape
+                            )
+                        }
+                    }
+                }
             }
         }
     ) { paddingValues ->
@@ -232,6 +295,7 @@ fun HistoryScreen(
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { dismissValue ->
                             if (dismissValue == SwipeToDismissBoxValue.EndToStart || dismissValue == SwipeToDismissBoxValue.StartToEnd) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 sessionToDelete = session
                                 showDeleteConfirmDialog = true
                                 false
@@ -278,7 +342,10 @@ fun HistoryScreen(
                             projectName = project?.name,
                             effectiveRate = if (session.appliedRate > 0.0) session.appliedRate else fallback,
                             hasOverlap = hasOverlap,
-                            onClick = { selectedSessionForEdit = session }
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                selectedSessionForEdit = session
+                            }
                         )
                     }
                 }
@@ -351,7 +418,7 @@ fun HistoryScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        sessionToDelete?.let { viewModel.deleteSession(it) }
+                        sessionToDelete?.let { viewModel.deleteSession(it.id) }
                         showDeleteConfirmDialog = false
                         sessionToDelete = null
                     },

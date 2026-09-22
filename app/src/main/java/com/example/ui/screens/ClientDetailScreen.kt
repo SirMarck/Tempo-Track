@@ -360,6 +360,14 @@ fun ClientDetailScreen(
                         val rate = if (s.appliedRate > 0.0) s.appliedRate else client.hourlyRate
                         s.calculateEarnings(rate)
                     }
+                    val pendingEarnings = clientSessions.filter { it.financialStatus == "unbilled" }.sumOf { s ->
+                        val rate = if (s.appliedRate > 0.0) s.appliedRate else client.hourlyRate
+                        s.calculateEarnings(rate)
+                    }
+                    val invoicedEarnings = clientSessions.filter { it.financialStatus != "unbilled" }.sumOf { s ->
+                        val rate = if (s.appliedRate > 0.0) s.appliedRate else client.hourlyRate
+                        s.calculateEarnings(rate)
+                    }
 
                     Column(verticalArrangement = Arrangement.spacedBy(TempoSpacing.space2)) {
                         Row(
@@ -394,12 +402,55 @@ fun ClientDetailScreen(
                                     .padding(TempoSpacing.space3)
                             ) {
                                 Column {
-                                    Text("Valor faturado", style = MaterialTheme.typography.labelSmall, color = TempoTextMuted)
+                                    Text("Total Geral", style = MaterialTheme.typography.labelSmall, color = TempoTextMuted)
                                     Text(
                                         text = FormatUtils.formatCurrency(totalAllEarnings),
                                         style = MaterialTheme.typography.titleMedium.copy(fontFamily = TempoMono),
                                         fontWeight = FontWeight.Bold,
                                         color = TempoAccent
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space2)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(TempoRadius.shapeSm)
+                                    .background(TempoSurface1)
+                                    .tempoMaterialHighlight(TempoRadius.shapeSm)
+                                    .padding(TempoSpacing.space3)
+                            ) {
+                                Column {
+                                    Text("A Faturar", style = MaterialTheme.typography.labelSmall, color = Color(0xFFF59E0B))
+                                    Text(
+                                        text = FormatUtils.formatCurrency(pendingEarnings),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontFamily = TempoMono),
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFF59E0B)
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(TempoRadius.shapeSm)
+                                    .background(TempoSurface1)
+                                    .tempoMaterialHighlight(TempoRadius.shapeSm)
+                                    .padding(TempoSpacing.space3)
+                            ) {
+                                Column {
+                                    Text("Faturado / Pago", style = MaterialTheme.typography.labelSmall, color = TempoSuccess)
+                                    Text(
+                                        text = FormatUtils.formatCurrency(invoicedEarnings),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontFamily = TempoMono),
+                                        fontWeight = FontWeight.Bold,
+                                        color = TempoSuccess
                                     )
                                 }
                             }
@@ -727,36 +778,95 @@ fun ClientDetailScreen(
                     }
                 }
 
-                // Botão de Exportar em PDF Editorial A4
+                // Botões de Ação de Exportação (PDF A4 e WhatsApp Direto)
                 item {
-                    Button(
-                        onClick = {
-                            if (reportFilteredSessions.isEmpty()) {
-                                Toast.makeText(context, "Nenhuma sessão no período para gerar relatório.", Toast.LENGTH_SHORT).show()
-                            } else {
-                                val pdfFile = ExportUtils.generatePdf(
-                                    context = context,
-                                    client = client,
-                                    sessions = reportFilteredSessions,
-                                    monthName = reportPeriodLabel
-                                )
-                                if (pdfFile != null) {
-                                    ExportUtils.shareFile(context, pdfFile, "application/pdf")
-                                } else {
-                                    Toast.makeText(context, "Erro ao gerar PDF do cliente.", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TempoAccent,
-                            contentColor = Color.White
-                        ),
-                        shape = TempoRadius.shapeSm,
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space2)
                     ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Exportar Relatório do Cliente (PDF A4)", fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = {
+                                if (reportFilteredSessions.isEmpty()) {
+                                    Toast.makeText(context, "Nenhuma sessão no período para gerar relatório.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val pdfFile = ExportUtils.generatePdf(
+                                        context = context,
+                                        client = client,
+                                        sessions = reportFilteredSessions,
+                                        monthName = reportPeriodLabel
+                                    )
+                                    if (pdfFile != null) {
+                                        ExportUtils.shareFile(context, pdfFile, "application/pdf")
+                                    } else {
+                                        Toast.makeText(context, "Erro ao gerar PDF do cliente.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = TempoAccent,
+                                contentColor = Color.White
+                            ),
+                            shape = TempoRadius.shapeSm,
+                            modifier = Modifier.weight(1f).height(46.dp)
+                        ) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("PDF A4", fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (reportFilteredSessions.isEmpty()) {
+                                    Toast.makeText(context, "Nenhuma sessão no período para enviar.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val pdfFile = ExportUtils.generatePdf(
+                                        context = context,
+                                        client = client,
+                                        sessions = reportFilteredSessions,
+                                        monthName = reportPeriodLabel
+                                    )
+                                    val msg = "Olá! Segue o fechamento de ${client.name} ($reportPeriodLabel):\n⏱ Total trabalhado: ${String.format(Locale.US, "%.1fh", reportHours)}\n💰 Total faturável: ${FormatUtils.formatCurrency(reportEarnings)}"
+                                    ExportUtils.shareViaWhatsApp(context, pdfFile, msg)
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF25D366),
+                                contentColor = Color.White
+                            ),
+                            shape = TempoRadius.shapeSm,
+                            modifier = Modifier.weight(1f).height(46.dp)
+                        ) {
+                            Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("WhatsApp", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Ação Rápida de Fechamento Financeiro
+                val unbilledSessions = remember(reportFilteredSessions) {
+                    reportFilteredSessions.filter { it.financialStatus == "unbilled" }
+                }
+                if (unbilledSessions.isNotEmpty()) {
+                    item {
+                        OutlinedButton(
+                            onClick = {
+                                unbilledSessions.forEach { session ->
+                                    viewModel.updateSession(session.copy(financialStatus = "invoiced"))
+                                }
+                                Toast.makeText(context, "${unbilledSessions.size} sessões marcadas como faturadas!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = TempoSuccess
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TempoSuccess),
+                            shape = TempoRadius.shapeSm,
+                            modifier = Modifier.fillMaxWidth().height(42.dp)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp), tint = TempoSuccess)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Marcar ${unbilledSessions.size} sessões como Faturadas", fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
 
@@ -780,6 +890,7 @@ fun ClientDetailScreen(
                         val rate = if (s.appliedRate > 0.0) s.appliedRate else client.hourlyRate
                         val valEarned = s.calculateEarnings(rate)
                         val p = projects.find { it.id == s.projectId }
+                        val isPending = s.financialStatus == "unbilled"
 
                         Row(
                             modifier = Modifier
@@ -792,7 +903,16 @@ fun ClientDetailScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(s.description.ifBlank { p?.name ?: "Sessão" }, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = TempoTextPrimary)
-                                Text("${FormatUtils.formatDate(s.startTime)} • ${FormatUtils.formatDuration(dur)}", style = MaterialTheme.typography.labelSmall, color = TempoTextSecondary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("${FormatUtils.formatDate(s.startTime)} • ${FormatUtils.formatDuration(dur)}", style = MaterialTheme.typography.labelSmall, color = TempoTextSecondary)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isPending) "A FATURAR" else "FATURADO",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isPending) Color(0xFFF59E0B) else TempoSuccess
+                                    )
+                                }
                             }
                             Text(FormatUtils.formatCurrency(valEarned), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = TempoMono), fontWeight = FontWeight.Bold, color = TempoAccent)
                         }

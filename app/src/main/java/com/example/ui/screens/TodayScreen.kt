@@ -27,6 +27,9 @@ import com.example.ui.theme.*
 import com.example.utils.FormatUtils
 import com.example.utils.UpdateManager
 import com.example.viewmodel.TimeTrackerViewModel
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.example.ui.components.HolographicClock3D
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -384,6 +387,7 @@ fun TodayScreen(
                                             .background(TempoSurface1)
                                             .tempoMaterialHighlight(TempoRadius.shapeSm)
                                             .clickable {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 // Fluxo de 1 toque: inicia imediatamente com contexto anterior
                                                 viewModel.startSession(
                                                     clientId = recent.clientId,
@@ -558,16 +562,20 @@ fun ActiveTimerPanel(
     val durationHours = durationMillis.toDouble() / (1000 * 60 * 60)
     val accumulatedEarnings = durationHours * rate
 
+    val haptic = LocalHapticFeedback.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(TempoRadius.shapeMd)
             .background(tempoElevatedGradient)
             .tempoMaterialHighlight(TempoRadius.shapeMd)
-            .clickable(onClick = onOpenFocus)
             .padding(TempoSpacing.space4)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
+        ) {
             // Cabeçalho: Badge de status e cliente
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -594,14 +602,26 @@ fun ActiveTimerPanel(
                 }
 
                 Text(
-                    text = "Toque para abrir foco",
+                    text = "Gire o aparelho para ver em 3D",
                     style = MaterialTheme.typography.labelSmall,
                     color = TempoTextMuted
                 )
             }
 
+            // ─── Relógio Holográfico 3D Vivo com Giroscópio ──────────────────
+            HolographicClock3D(
+                durationText = durationText,
+                accumulatedEarnings = accumulatedEarnings,
+                isPaused = session.isPaused,
+                sizeDp = 220.dp,
+                onClick = onOpenFocus
+            )
+
             // Nome do cliente e projeto/atividade
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = client?.name ?: "Cliente",
                     style = MaterialTheme.typography.titleLarge,
@@ -620,50 +640,27 @@ fun ActiveTimerPanel(
                 }
             }
 
-            // Cronômetro Central e Valor Acumulado (sem jitter)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Text(
-                    text = durationText,
-                    style = MaterialTheme.typography.displayLarge.copy(fontFamily = TempoMono),
-                    color = TempoTextPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "VALOR ACUMULADO",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TempoTextMuted,
-                        letterSpacing = 0.5.sp
-                    )
-                    Text(
-                        text = FormatUtils.formatCurrency(accumulatedEarnings),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontFamily = TempoMono),
-                        color = TempoAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            // Ações: Pausar/Retomar e Finalizar
+            // Ações: Pausar/Retomar e Finalizar com Haptic Feedback
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
             ) {
                 TempoSecondaryAction(
                     text = if (session.isPaused) "Retomar" else "Pausar",
-                    onClick = { if (session.isPaused) onResume() else onPause() },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        if (session.isPaused) onResume() else onPause()
+                    },
                     icon = if (session.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                     modifier = Modifier.weight(1f)
                 )
 
                 TempoPrimaryAction(
                     text = "Finalizar",
-                    onClick = onFinish,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onFinish()
+                    },
                     icon = Icons.Default.Stop,
                     modifier = Modifier.weight(1f)
                 )
