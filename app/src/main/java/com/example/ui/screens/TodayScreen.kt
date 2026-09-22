@@ -48,6 +48,7 @@ fun TodayScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
 
     val clients by viewModel.clients.collectAsState()
     val activeClients by viewModel.activeClients.collectAsState()

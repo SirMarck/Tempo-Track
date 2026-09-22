@@ -401,6 +401,10 @@ class TimeTrackerViewModel(
         _geminiAnalysisState.value = GeminiAnalysisState.Idle
     }
 
+    fun clearGeminiState() {
+        _geminiAnalysisState.value = GeminiAnalysisState.Idle
+    }
+
     fun parseQuickSessionWithGemini(
         text: String,
         onResult: (com.example.data.gemini.ParsedQuickSession?, String?) -> Unit

@@ -740,7 +740,7 @@ fun ReportsScreen(
         }
         is GeminiAnalysisState.Success -> {
             AlertDialog(
-                onDismissRequest = { viewModel.clearGeminiState() },
+                onDismissRequest = { viewModel.clearGeminiAnalysis() },
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -770,7 +770,7 @@ fun ReportsScreen(
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             cm.setPrimaryClip(ClipData.newPlainText("Análise Gemini", state.analysis))
                             Toast.makeText(context, "Análise copiada!", Toast.LENGTH_SHORT).show()
-                            viewModel.clearGeminiState()
+                            viewModel.clearGeminiAnalysis()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = TempoAccent),
                         shape = TempoRadius.shapeSm
@@ -779,7 +779,7 @@ fun ReportsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.clearGeminiState() }) {
+                    TextButton(onClick = { viewModel.clearGeminiAnalysis() }) {
                         Text("Fechar", color = TempoTextMuted)
                     }
                 },
@@ -788,11 +788,11 @@ fun ReportsScreen(
         }
         is GeminiAnalysisState.Error -> {
             AlertDialog(
-                onDismissRequest = { viewModel.clearGeminiState() },
+                onDismissRequest = { viewModel.clearGeminiAnalysis() },
                 title = { Text("Erro na Análise", color = TempoDanger) },
                 text = { Text(state.message, color = TempoTextSecondary) },
                 confirmButton = {
-                    TextButton(onClick = { viewModel.clearGeminiState() }) {
+                    TextButton(onClick = { viewModel.clearGeminiAnalysis() }) {
                         Text("OK", color = TempoAccent)
                     }
                 },

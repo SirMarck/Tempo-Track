@@ -537,27 +537,34 @@ object ExportUtils {
         context.startActivity(Intent.createChooser(intent, "Compartilhar Relatório"))
     }
 
-    fun shareViaWhatsApp(context: Context, file: File, message: String) {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+    fun shareViaWhatsApp(context: Context, file: File?, message: String) {
+        val uri = if (file != null) {
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+        } else null
+
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
-            putExtra(Intent.EXTRA_STREAM, uri)
+            type = if (uri != null) "application/pdf" else "text/plain"
+            if (uri != null) {
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
             putExtra(Intent.EXTRA_TEXT, message)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             setPackage("com.whatsapp")
         }
         try {
             context.startActivity(intent)
         } catch (e: Exception) {
             val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/pdf"
-                putExtra(Intent.EXTRA_STREAM, uri)
+                type = if (uri != null) "application/pdf" else "text/plain"
+                if (uri != null) {
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
                 putExtra(Intent.EXTRA_TEXT, message)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(Intent.createChooser(fallbackIntent, "Compartilhar via WhatsApp / App"))
         }

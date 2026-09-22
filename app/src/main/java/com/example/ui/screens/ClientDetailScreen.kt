@@ -250,6 +250,10 @@ fun ClientDetailScreen(
         }
     }
 
+    val reportUnbilledSessions = remember(reportFilteredSessions) {
+        reportFilteredSessions.filter { it.financialStatus == "unbilled" }
+    }
+
     Scaffold(
         containerColor = TempoBgBase,
         topBar = {
@@ -825,8 +829,12 @@ fun ClientDetailScreen(
                                         sessions = reportFilteredSessions,
                                         monthName = reportPeriodLabel
                                     )
-                                    val msg = "Olá! Segue o fechamento de ${client.name} ($reportPeriodLabel):\n⏱ Total trabalhado: ${String.format(Locale.US, "%.1fh", reportHours)}\n💰 Total faturável: ${FormatUtils.formatCurrency(reportEarnings)}"
-                                    ExportUtils.shareViaWhatsApp(context, pdfFile, msg)
+                                    if (pdfFile != null) {
+                                        val msg = "Olá! Segue o fechamento de ${client.name} ($reportPeriodLabel):\n⏱ Total trabalhado: ${String.format(Locale.US, "%.1fh", reportHours)}\n💰 Total faturável: ${FormatUtils.formatCurrency(reportEarnings)}"
+                                        ExportUtils.shareViaWhatsApp(context, pdfFile, msg)
+                                    } else {
+                                        Toast.makeText(context, "Erro ao gerar PDF do cliente.", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(
@@ -844,17 +852,14 @@ fun ClientDetailScreen(
                 }
 
                 // Ação Rápida de Fechamento Financeiro
-                val unbilledSessions = remember(reportFilteredSessions) {
-                    reportFilteredSessions.filter { it.financialStatus == "unbilled" }
-                }
-                if (unbilledSessions.isNotEmpty()) {
+                if (reportUnbilledSessions.isNotEmpty()) {
                     item {
                         OutlinedButton(
                             onClick = {
-                                unbilledSessions.forEach { session ->
+                                reportUnbilledSessions.forEach { session ->
                                     viewModel.updateSession(session.copy(financialStatus = "invoiced"))
                                 }
-                                Toast.makeText(context, "${unbilledSessions.size} sessões marcadas como faturadas!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "${reportUnbilledSessions.size} sessões marcadas como faturadas!", Toast.LENGTH_SHORT).show()
                             },
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = TempoSuccess
@@ -865,7 +870,7 @@ fun ClientDetailScreen(
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp), tint = TempoSuccess)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Marcar ${unbilledSessions.size} sessões como Faturadas", fontWeight = FontWeight.SemiBold)
+                            Text("Marcar ${reportUnbilledSessions.size} sessões como Faturadas", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
