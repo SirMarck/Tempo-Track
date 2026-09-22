@@ -40,33 +40,36 @@ fun MainScreen(viewModel: TimeTrackerViewModel) {
     val projects by viewModel.projects.collectAsState()
 
     val isFocusScreen = currentRoute == Screen.TimerFocus.route
+    val isTodayRoute = currentRoute == null || currentRoute == Screen.Today.route || currentRoute == "dashboard"
 
     Scaffold(
         containerColor = TempoBgBase,
         bottomBar = {
             if (!isFocusScreen) {
                 Column {
-                    // Mini Timer Bar flutuante quando há sessão ativa
-                    MiniTimerBar(
-                        session = activeSession,
-                        clients = clients,
-                        projects = projects,
-                        onOpenFocus = {
-                            navController.navigate(Screen.Today.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = false
+                    // Mini Timer Bar flutuante quando há sessão ativa APENAS em outras abas (não duplica na aba Hoje)
+                    if (!isTodayRoute) {
+                        MiniTimerBar(
+                            session = activeSession,
+                            clients = clients,
+                            projects = projects,
+                            onOpenFocus = {
+                                navController.navigate(Screen.Today.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = false
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = false
                                 }
-                                launchSingleTop = true
-                                restoreState = false
-                            }
-                        },
-                        onPause = { viewModel.pauseActiveSession() },
-                        onResume = { viewModel.resumeActiveSession() }
-                    )
+                            },
+                            onPause = { viewModel.pauseActiveSession() },
+                            onResume = { viewModel.resumeActiveSession() }
+                        )
+                    }
 
                     // Barra de Navegação Inferior
                     NavigationBar(
-                        containerColor = TempoSurface1,
+                        containerColor = if (isTodayRoute && activeSession != null) TempoSurface1.copy(alpha = 0.82f) else TempoSurface1,
                         contentColor = TempoTextPrimary
                     ) {
                         // 1. Hoje

@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -243,7 +244,7 @@ fun TodayScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = TempoSpacing.space4),
-            verticalArrangement = Arrangement.spacedBy(TempoSpacing.space4)
+            verticalArrangement = if (activeSession != null) Arrangement.spacedBy(8.dp) else Arrangement.spacedBy(TempoSpacing.space4)
         ) {
             // ─── 1. Resumo Integrado em Linha (Sem cards pesados) ───────────────
             item {
@@ -251,9 +252,18 @@ fun TodayScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(TempoRadius.shapeMd)
-                        .background(tempoSurfaceGradient)
+                        .background(
+                            if (activeSession != null) {
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        TempoSurface2.copy(alpha = 0.65f),
+                                        TempoSurface1.copy(alpha = 0.55f)
+                                    )
+                                )
+                            } else tempoSurfaceGradient
+                        )
                         .tempoMaterialHighlight(TempoRadius.shapeMd)
-                        .padding(TempoSpacing.space4),
+                        .padding(if (activeSession != null) PaddingValues(horizontal = 12.dp, vertical = 8.dp) else PaddingValues(all = TempoSpacing.space4)),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -265,7 +275,7 @@ fun TodayScreen(
                     Box(
                         modifier = Modifier
                             .width(1.dp)
-                            .height(40.dp)
+                            .height(if (activeSession != null) 30.dp else 40.dp)
                             .background(TempoOutline)
                     )
                     TempoStatBlock(
@@ -286,31 +296,35 @@ fun TodayScreen(
                     Button(
                         onClick = { showAddClientDialog = true },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = TempoSurface2,
+                            containerColor = TempoSurface2.copy(alpha = if (activeSession != null) 0.60f else 1f),
                             contentColor = TempoAccent
                         ),
                         shape = TempoRadius.shapeSm,
-                        modifier = Modifier.weight(1f).height(38.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(if (activeSession != null) 32.dp else 38.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Novo Cliente", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Novo Cliente", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
 
                     Button(
                         onClick = { showManualDialog = true },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = TempoSurface2,
+                            containerColor = TempoSurface2.copy(alpha = if (activeSession != null) 0.60f else 1f),
                             contentColor = TempoTextPrimary
                         ),
                         shape = TempoRadius.shapeSm,
-                        modifier = Modifier.weight(1f).height(38.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(if (activeSession != null) 32.dp else 38.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        Icon(Icons.Default.AddAlarm, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.AddAlarm, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Lançar Manual", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Lançar Manual", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -502,7 +516,7 @@ fun TodayScreen(
 
 
             item {
-                Spacer(modifier = Modifier.height(TempoSpacing.space6))
+                Spacer(modifier = Modifier.height(if (activeSession != null) 4.dp else TempoSpacing.space6))
             }
         }
     }
@@ -638,15 +652,22 @@ fun ActiveTimerPanel(
         modifier = Modifier
             .fillMaxWidth()
             .clip(TempoRadius.shapeMd)
-            .background(tempoElevatedGradient)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF1E242C).copy(alpha = 0.68f),
+                        Color(0xFF12161D).copy(alpha = 0.58f)
+                    )
+                )
+            )
             .tempoMaterialHighlight(TempoRadius.shapeMd)
-            .padding(TempoSpacing.space4)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Cabeçalho: Status com ponto luminoso (sem o texto 'gire o telefone')
+            // Cabeçalho: Status com ponto luminoso compacto
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -654,15 +675,15 @@ fun ActiveTimerPanel(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space2),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(TempoSurface2)
-                        .padding(horizontal = 12.dp, vertical = 5.dp)
+                        .background(TempoSurface2.copy(alpha = 0.60f))
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(7.dp)
                             .clip(CircleShape)
                             .background(if (session.isPaused) TempoWarning else TempoAccent)
                     )
@@ -670,38 +691,43 @@ fun ActiveTimerPanel(
                         text = if (session.isPaused) "PAUSADO" else "EM ANDAMENTO",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
                         color = if (session.isPaused) TempoWarning else TempoAccent,
                         letterSpacing = 0.5.sp
                     )
                 }
             }
 
-            // Identificação: Cliente, Projeto e Atividade
+            // Identificação: Cliente, Projeto e Atividade compactos
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = client?.name ?: "Cliente",
-                    style = MaterialTheme.typography.titleLarge.copy(
+                    style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.3).sp
                     ),
-                    color = TempoTextPrimary
+                    fontSize = 17.sp,
+                    color = TempoTextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 val projectTitle = project?.name ?: session.description.takeIf { it.isNotEmpty() }
                 if (!projectTitle.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(1.dp))
                     Text(
                         text = projectTitle,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 12.sp,
                         color = TempoTextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
                 if (activity != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -710,11 +736,11 @@ fun ActiveTimerPanel(
                             imageVector = Icons.Default.Adjust,
                             contentDescription = null,
                             tint = Color(0xFFFF6B35),
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(11.dp)
                         )
                         Text(
                             text = activity.name,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFFFF6B35)
                         )
@@ -722,41 +748,41 @@ fun ActiveTimerPanel(
                 }
             }
 
-            // ─── Relógio Holográfico 3D Vivo com Giroscópio ──────────────────
+            // ─── Relógio Holográfico 3D Vivo com Giroscópio (Compacto 180.dp) ───
             HolographicClock3D(
                 durationText = durationText,
                 accumulatedEarnings = accumulatedEarnings,
                 isPaused = session.isPaused,
-                sizeDp = 240.dp,
+                sizeDp = 180.dp,
                 effectiveRate = if (session.billable) rate else 0.0,
-                onClick = null // Desabilita abrir outra tela ao clicar no relógio: tudo funciona diretamente aqui na aba Hoje!
+                onClick = null // Tudo funciona diretamente na aba Hoje sem abrir outra tela!
             )
 
-            // ─── Dual Metric Cards (Valor/hora & Início) ──────────
+            // ─── Dual Metric Cards (Valor/hora & Início) Translúcidos ──────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Card 1: Valor/hora
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(TempoSurface2.copy(alpha = 0.75f))
-                        .tempoMaterialHighlight(RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(TempoSurface2.copy(alpha = 0.60f))
+                        .tempoMaterialHighlight(RoundedCornerShape(10.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Column {
                         Text(
                             text = "Valor/hora",
-                            fontSize = 11.sp,
+                            fontSize = 10.sp,
                             color = TempoTextMuted,
                             fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
                             text = if (rate > 0.0) FormatUtils.formatCurrency(rate) else "Sem taxa",
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontFamily = TempoMono,
                             fontWeight = FontWeight.Bold,
                             color = TempoTextPrimary
@@ -768,22 +794,22 @@ fun ActiveTimerPanel(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(TempoSurface2.copy(alpha = 0.75f))
-                        .tempoMaterialHighlight(RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(TempoSurface2.copy(alpha = 0.60f))
+                        .tempoMaterialHighlight(RoundedCornerShape(10.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "Início",
-                            fontSize = 11.sp,
+                            fontSize = 10.sp,
                             color = TempoTextMuted,
                             fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
                             text = sessionStartTimeFormatted,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontFamily = TempoMono,
                             fontWeight = FontWeight.Bold,
                             color = TempoTextPrimary
@@ -792,30 +818,68 @@ fun ActiveTimerPanel(
                 }
             }
 
-            // Ações: Pausar/Retomar e Finalizar com Haptic Feedback
+            // Ações: Pausar/Retomar e Finalizar com transparência translúcida
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(TempoSpacing.space3)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TempoSecondaryAction(
-                    text = if (session.isPaused) "Retomar" else "Pausar",
+                Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         if (session.isPaused) onResume() else onPause()
                     },
-                    icon = if (session.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TempoSurface3.copy(alpha = 0.65f),
+                        contentColor = TempoTextPrimary
+                    ),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = if (session.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                        contentDescription = null,
+                        tint = TempoTextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (session.isPaused) "Retomar" else "Pausar",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
 
-                TempoPrimaryAction(
-                    text = "Finalizar",
+                Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onFinish()
                     },
-                    icon = Icons.Default.Stop,
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TempoAccent.copy(alpha = 0.82f),
+                        contentColor = Color.White
+                    ),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Finalizar",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

@@ -14,8 +14,8 @@ android {
     applicationId = "com.aistudio.tempotrack.kzmplo"
     minSdk = 24
     targetSdk = 36
-    versionCode = 12
-    versionName = "2.4.6"
+    versionCode = 13
+    versionName = "2.4.7"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

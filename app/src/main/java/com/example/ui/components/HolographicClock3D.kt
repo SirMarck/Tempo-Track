@@ -534,7 +534,7 @@ fun HolographicClock3D(
                 text = durationText,
                 style = MaterialTheme.typography.displayMedium.copy(
                     fontFamily = TempoMono,
-                    fontSize = 32.sp,
+                    fontSize = if (sizeDp < 200.dp) 24.sp else 32.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.5).sp
                 ),
@@ -561,7 +561,7 @@ fun HolographicClock3D(
                     text = displayText,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = TempoMono,
-                        fontSize = 14.sp,
+                        fontSize = if (sizeDp < 200.dp) 12.sp else 14.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     color = if (isPaused) Color(0xFFFFA726) else TempoAccent
